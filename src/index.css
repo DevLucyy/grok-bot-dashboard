@@ -2,60 +2,75 @@
 
 @layer base {
   :root {
-    --bg-cosmic: #070913;
-    --card-surface: #0e1222;
-    --card-border: #1a2238;
-    --neon-green: #22c55e;
-    --neon-coral: #f87171;
-    --neon-blue: #38bdf8;
-    --neon-amber: #f59e0b;
+    --bg-dark: #070709;
+    --panel-bg: #08090d;
+    --border-yellow: #eab308;
+    --neon-green: #10b981;
+    --neon-rose: #f43f5e;
+    --neon-cyan: #06b6d4;
   }
 
   body {
-    background-color: var(--bg-cosmic);
-    background-image: 
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.12), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139, 92, 246, 0.08), transparent);
+    background-color: var(--bg-dark);
     color: #e2e8f0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    overflow-x: hidden;
   }
 }
 
-/* Monospace font for logs and code numbers */
+/* Monospace font settings */
 .font-mono-numbers {
   font-family: 'JetBrains Mono', monospace;
   font-feature-settings: 'tnum' on, 'zero' on;
 }
 
-.font-display {
-  font-family: 'Space Grotesk', sans-serif;
-}
-
 /* Custom cyber scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(14, 18, 34, 0.6);
+  background: rgba(9, 11, 16, 0.8);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(56, 189, 248, 0.25);
-  border-radius: 4px;
+  background: rgba(234, 179, 8, 0.35);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(56, 189, 248, 0.5);
+  background: rgba(234, 179, 8, 0.7);
 }
 
-/* Card glass styles */
-.cyber-card {
-  background: linear-gradient(180deg, rgba(16, 22, 44, 0.85) 0%, rgba(11, 15, 30, 0.95) 100%);
-  border: 1px solid rgba(40, 52, 86, 0.6);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+/* Grok Jev Cyber Panel with Yellow Framing */
+.jev-panel {
+  background-color: #08090d;
+  border: 1.5px solid #eab308;
+  position: relative;
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.08);
 }
 
-.cyber-card-active {
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 0 25px -4px rgba(56, 189, 248, 0.25);
+/* Hazard diagonal stripes */
+.hazard-stripes {
+  background: repeating-linear-gradient(
+    -45deg,
+    #facc15,
+    #facc15 8px,
+    #090b10 8px,
+    #090b10 16px
+  );
+}
+
+@keyframes conveyorRoll {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+
+.conveyor-track {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.08) 0,
+    rgba(255, 255, 255, 0.08) 4px,
+    transparent 4px,
+    transparent 12px
+  );
+  animation: conveyorRoll 2s linear infinite;
 }

@@ -57,6 +57,14 @@ export function App() {
               wins={engine.wins}
               losses={engine.losses}
               history={engine.balanceHistory}
+              winRatePercent={engine.winRatePercent}
+              profitFactor={engine.profitFactor}
+              maxDrawdown={engine.maxDrawdown}
+              consecutiveLosses={engine.consecutiveLosses}
+              maxConsecutiveLosses={engine.maxConsecutiveLosses}
+              simMode={engine.simMode}
+              onToggleSimMode={engine.setSimMode}
+              isRuin={engine.isRuin}
             />
           </div>
 

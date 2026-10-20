@@ -90,24 +90,40 @@ export interface MegaWinState {
   vault: number;
 }
 
+export type SimulationMode = 'REAL_MARKET' | 'TIKTOK_DEMO';
+
 export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestnet: boolean = true) {
+  // Mode: REAL_MARKET (realistic 46-52% win rate, slippage, true drawdown) vs TIKTOK_DEMO (82% viral mode)
+  const [simMode, setSimMode] = useState<SimulationMode>(() => {
+    return (localStorage.getItem('grok_sim_mode') as SimulationMode) || 'REAL_MARKET';
+  });
+
   // Real $15.00 Wallet State Baseline
   const [startingCapital] = useState<number>(15.00);
-  const [balance, setBalance] = useState<number>(22.94); // Compounded live from $15.00
+  const [balance, setBalance] = useState<number>(15.00);
   const [tonightStart, setTonightStart] = useState<number>(15.00);
-  const [wins, setWins] = useState<number>(18);
-  const [losses, setLosses] = useState<number>(3);
+  const [wins, setWins] = useState<number>(0);
+  const [losses, setLosses] = useState<number>(0);
+  const [peakBalance, setPeakBalance] = useState<number>(15.00);
+  const [maxDrawdown, setMaxDrawdown] = useState<number>(0);
+  const [grossProfit, setGrossProfit] = useState<number>(0);
+  const [grossLoss, setGrossLoss] = useState<number>(0);
+  const [consecutiveLosses, setConsecutiveLosses] = useState<number>(0);
+  const [maxConsecutiveLosses, setMaxConsecutiveLosses] = useState<number>(0);
 
   // Real micro-wallet compounding history starting from $15.00
   const [balanceHistory, setBalanceHistory] = useState<{ time: string; balance: number; flag?: string; isLoss?: boolean }[]>([
-    { time: '03:00', balance: 15.00 },
-    { time: '03:03', balance: 15.48, flag: 'BAZZ +$0.48' },
-    { time: '03:05', balance: 16.20, flag: 'FERRO +$0.72' },
-    { time: '03:07', balance: 16.09, flag: 'TOMI -$0.11', isLoss: true },
-    { time: '03:09', balance: 16.94, flag: 'OKKO +$0.85' },
-    { time: '03:12', balance: 18.14, flag: 'QUILO +$1.20' },
-    { time: '03:14', balance: 22.94, flag: 'LUX +$4.80' }
+    { time: new Date().toTimeString().slice(0, 5), balance: 15.00 }
   ]);
+
+  const handleSetSimMode = (mode: SimulationMode) => {
+    setSimMode(mode);
+    try {
+      localStorage.setItem('grok_sim_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
 
   // Traders Leaderboard (Realistic micro-dollar PnLs for $15 wallet)
   const [traders, setTraders] = useState<TraderStats[]>([
@@ -195,8 +211,14 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     setTonightStart(newStartingAmount);
     setWins(0);
     setLosses(0);
+    setPeakBalance(newStartingAmount);
+    setMaxDrawdown(0);
+    setGrossProfit(0);
+    setGrossLoss(0);
+    setConsecutiveLosses(0);
+    setMaxConsecutiveLosses(0);
     setBalanceHistory([
-      { time: new Date().toTimeString().slice(3, 8), balance: newStartingAmount }
+      { time: new Date().toTimeString().slice(0, 5), balance: newStartingAmount }
     ]);
     setTraders([
       { id: 'bazz', name: 'BAZZ', role: 'SNIPE', pnl: 0, color: '#06b6d4', textColor: 'text-cyan-400', consecutiveLosses: 0 },
@@ -221,7 +243,7 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     });
   };
 
-  // Autonomous Copy-Trading Cycle with REAL $15 WALLET ACCURACY
+  // Autonomous Copy-Trading Cycle with REAL-WORLD MARKET PROBABILITY
   useEffect(() => {
     const interval = setInterval(() => {
       // 1. Advance conveyor station smoothly
@@ -240,48 +262,99 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
         setRugBinCount(c => c + 1);
       }
 
-      // 4. Trade Execution with strict realistic micro-wallet mathematics
-      if (Math.random() > 0.55) {
+      // 4. Trade Execution with Real-world probabilities & risk physics
+      if (Math.random() > 0.50 && balance > 0.40) {
         const traderOrder = ['BAZZ', 'OKKO', 'LUX', 'FERRO', 'QUILO', 'TOMI'];
         const chosenTrader = traderOrder[Math.floor(Math.random() * traderOrder.length)];
         const tokenObj = WATCHLIST_TOKENS[Math.floor(Math.random() * WATCHLIST_TOKENS.length)];
-        const isWin = Math.random() < 0.82; // 82% win rate
 
-        // Position size: strictly 25% of current wallet balance
-        const currentPosSize = Number((balance * 0.25).toFixed(2));
+        // Position size: strictly 25% of current balance (min $0.50)
+        const currentPosSize = Math.max(0.50, Number((balance * 0.25).toFixed(2)));
 
+        let isWin = false;
         let pnl = 0;
         let isMega = false;
-        if (isWin) {
-          if (Math.random() > 0.85) {
-            // Mega Win! (+100% to +180% move on micro-position)
-            const mult = Math.random() * 0.8 + 1.0; // 100% to 180%
-            pnl = Number((currentPosSize * mult).toFixed(2)); // e.g. +$3.75 to +$6.75
-            isMega = true;
+
+        if (simMode === 'REAL_MARKET') {
+          // REAL-WORLD MARKET PROBABILITY MODEL:
+          // Live Bybit orderbook depth pressure
+          const btcDepth = bybitFeed.depth['BTCUSDT'];
+          const bookImbalance = btcDepth ? btcDepth.imbalance : 0; // -1 (heavy sellers) to +1 (heavy buyers)
+
+          // Base quantitative momentum scalping win probability: ~48%
+          let winProbability = 0.48 + (bookImbalance * 0.05) + ((Math.random() - 0.5) * 0.06);
+          // Realistic crypto scalping boundaries: 38% to 54%
+          winProbability = Math.max(0.38, Math.min(0.54, winProbability));
+
+          isWin = Math.random() < winProbability;
+
+          if (isWin) {
+            // Realistic win: +3.5% to +8.5% move on position
+            // Rare momentum breakout (8% of wins): +18% to +35% move
+            const isRunner = Math.random() < 0.08;
+            const movePct = isRunner ? (Math.random() * 0.17 + 0.18) : (Math.random() * 0.05 + 0.035);
+            pnl = Number((currentPosSize * movePct).toFixed(2));
+            if (isRunner) isMega = true;
           } else {
-            // Regular high-frequency scalp (+8% to +28% move on micro-position)
-            const pct = Math.random() * 0.20 + 0.08;
-            pnl = Number((currentPosSize * pct).toFixed(2)); // e.g. +$0.30 to +$1.05
+            // Realistic loss: -3.0% to -5.5% stop loss
+            // Rare slippage gap-down in low liquidity (5% of losses): -12% to -20% stop slip
+            const isSlippageGap = Math.random() < 0.05;
+            const stopPct = isSlippageGap ? (Math.random() * 0.08 + 0.12) : (Math.random() * 0.025 + 0.03);
+            pnl = -Number((currentPosSize * stopPct).toFixed(2));
           }
+
+          // Deduct real market execution slippage (0.15% to 0.35%)
+          const slippage = Number((currentPosSize * (Math.random() * 0.002 + 0.0015)).toFixed(3));
+          // Deduct real exchange taker fee (0.055% open + 0.055% close = 0.11%)
+          const fee = Number((currentPosSize * 0.0011).toFixed(3));
+          pnl = Number((pnl - slippage - fee).toFixed(2));
         } else {
-          // Tight cut loss (-2.5% to -4% stop)
-          const pct = Math.random() * 0.015 + 0.025;
-          pnl = -Number((currentPosSize * pct).toFixed(2)); // e.g. -$0.09 to -$0.15
+          // TIKTOK DEMO MODE (Ideal viral presentation)
+          isWin = Math.random() < 0.82;
+          if (isWin) {
+            if (Math.random() > 0.85) {
+              const mult = Math.random() * 0.8 + 1.0;
+              pnl = Number((currentPosSize * mult).toFixed(2));
+              isMega = true;
+            } else {
+              const pct = Math.random() * 0.20 + 0.08;
+              pnl = Number((currentPosSize * pct).toFixed(2));
+            }
+          } else {
+            const pct = Math.random() * 0.015 + 0.025;
+            pnl = -Number((currentPosSize * pct).toFixed(2));
+          }
+          const fee = Number((currentPosSize * 0.00055).toFixed(3));
+          pnl = Number((pnl - fee).toFixed(2));
         }
 
-        // Deduct realistic exchange fee (0.055% taker)
-        const fee = Number((currentPosSize * 0.00055).toFixed(3));
-        pnl = Number((pnl - fee).toFixed(2));
-
         const nowTime = new Date().toTimeString().split(' ')[0];
-        const newBal = Number((balance + pnl).toFixed(2));
+        const newBal = Math.max(0, Number((balance + pnl).toFixed(2)));
         setBalance(newBal);
+
+        // Update peak balance and maximum drawdown
+        setPeakBalance(prevPeak => {
+          const nextPeak = Math.max(prevPeak, newBal);
+          if (nextPeak > 0) {
+            const currentDd = Number((((nextPeak - newBal) / nextPeak) * 100).toFixed(1));
+            setMaxDrawdown(prevDd => Math.max(prevDd, currentDd));
+          }
+          return nextPeak;
+        });
 
         if (isWin) {
           setWins(w => w + 1);
+          setGrossProfit(gp => Number((gp + pnl).toFixed(2)));
+          setConsecutiveLosses(0);
           setVaultPings(prev => [`+$${pnl.toFixed(2)}`, ...prev.slice(0, 2)]);
         } else {
           setLosses(l => l + 1);
+          setGrossLoss(gl => Number((gl + Math.abs(pnl)).toFixed(2)));
+          setConsecutiveLosses(cl => {
+            const nextCl = cl + 1;
+            setMaxConsecutiveLosses(m => Math.max(m, nextCl));
+            return nextCl;
+          });
         }
 
         // Realistic entry & exit based on real token price
@@ -381,14 +454,14 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
           ...prev.slice(0, 40)
         ]);
 
-        // Stepped chart history update on significant trades
-        if (isMega || Math.random() > 0.4) {
+        // Stepped chart history update on significant trades or losses
+        if (isMega || !isWin || Math.random() > 0.35) {
           setBalanceHistory(prev => [
             ...prev,
             {
               time: nowTime.slice(3, 8),
               balance: newBal,
-              flag: isMega ? `${chosenTrader} +$${pnl.toFixed(2)}` : undefined,
+              flag: isMega ? `${chosenTrader} +$${pnl.toFixed(2)}` : (!isWin && pnl <= -0.15 ? `${chosenTrader} -$${Math.abs(pnl).toFixed(2)}` : undefined),
               isLoss: !isWin
             }
           ]);
@@ -411,17 +484,28 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     }, 2400);
 
     return () => clearInterval(interval);
-  }, [balance]);
+  }, [balance, simMode, bybitFeed]);
 
   const tonightGainPercent = tonightStart > 0 ? Number((((balance - tonightStart) / tonightStart) * 100).toFixed(2)) : 0;
+  const winRatePercent = (wins + losses) > 0 ? Number(((wins / (wins + losses)) * 100).toFixed(1)) : 0;
+  const profitFactor = grossLoss > 0 ? Number((grossProfit / grossLoss).toFixed(2)) : (grossProfit > 0 ? 9.99 : 1.00);
 
   return {
+    simMode,
+    setSimMode: handleSetSimMode,
     startingCapital,
     balance,
     tonightStart,
     tonightGainPercent,
     wins,
     losses,
+    winRatePercent,
+    profitFactor,
+    peakBalance,
+    maxDrawdown,
+    consecutiveLosses,
+    maxConsecutiveLosses,
+    isRuin: balance < 0.50,
     balanceHistory,
     traders,
     funnel,

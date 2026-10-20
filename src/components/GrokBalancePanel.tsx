@@ -147,7 +147,11 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
       ctx.strokeStyle = h.isLoss ? '#f43f5e' : '#10b981';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(x - pillW / 2, pillY, pillW, pillH, 4);
+      if (typeof (ctx as any).roundRect === 'function') {
+        (ctx as any).roundRect(x - pillW / 2, pillY, pillW, pillH, 4);
+      } else {
+        ctx.rect(x - pillW / 2, pillY, pillW, pillH);
+      }
       ctx.fill();
       ctx.stroke();
 

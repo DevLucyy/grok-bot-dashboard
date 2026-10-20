@@ -77,7 +77,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
             </div>
             {ticket.bybitOrderId && (
               <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40 shadow-sm animate-pulse">
-                BYBIT #{ticket.bybitOrderId.slice(-6)}
+                BYBIT #{String(ticket.bybitOrderId).slice(-6)}
               </span>
             )}
           </div>
@@ -99,14 +99,14 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
         <div className="p-2 rounded bg-black/60 border border-yellow-500/10 flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">SIZE (25% BANK)</span>
           <span className="text-xs font-bold text-slate-200">
-            ${ticket.sizeUsd.toFixed(2)} <span className="text-yellow-400/80">({ticket.sizePercent}%)</span>
+            ${(ticket.sizeUsd ?? 0).toFixed(2)} <span className="text-yellow-400/80">({ticket.sizePercent ?? 25}%)</span>
           </span>
         </div>
 
         <div className="p-2 rounded bg-black/60 border border-yellow-500/10 flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">RESULT P&L</span>
           <span className={`text-sm font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-            {isPositive ? `+$${ticket.resultPnl.toFixed(2)}` : `-$${Math.abs(ticket.resultPnl).toFixed(2)}`}
+            {isPositive ? `+$${(ticket.resultPnl ?? 0).toFixed(2)}` : `-$${Math.abs(ticket.resultPnl ?? 0).toFixed(2)}`}
           </span>
         </div>
       </div>

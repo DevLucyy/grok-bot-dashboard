@@ -121,7 +121,11 @@ export const JevAnalysisPanel: React.FC<JevAnalysisPanelProps> = ({
     ctx.strokeStyle = '#10b981';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(buyX - 44, buyY, 88, 15, 4);
+    if (typeof (ctx as any).roundRect === 'function') {
+      (ctx as any).roundRect(buyX - 44, buyY, 88, 15, 4);
+    } else {
+      ctx.rect(buyX - 44, buyY, 88, 15);
+    }
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#a7f3d0';
@@ -138,7 +142,11 @@ export const JevAnalysisPanel: React.FC<JevAnalysisPanelProps> = ({
     ctx.strokeStyle = '#facc15';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(sellX - 58, sellY, 116, 15, 4);
+    if (typeof (ctx as any).roundRect === 'function') {
+      (ctx as any).roundRect(sellX - 58, sellY, 116, 15, 4);
+    } else {
+      ctx.rect(sellX - 58, sellY, 116, 15);
+    }
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#fef08a';

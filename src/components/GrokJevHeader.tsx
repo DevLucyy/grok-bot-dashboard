@@ -22,7 +22,7 @@ export const GrokJevHeader: React.FC<GrokJevHeaderProps> = ({
             Grok Bot <span className="text-yellow-400 font-bold">×</span> Jev
           </h1>
           <p className="text-[11px] font-mono text-yellow-400 font-semibold tracking-wider uppercase mt-0.5">
-            DAY 1 · ${balance.toFixed(2)} REAL WALLET · JEV PICKS, GROK TRADES (NO DEMOS)
+            DAY 1 · ${(balance ?? 0).toFixed(2)} REAL WALLET · JEV PICKS, GROK TRADES (NO DEMOS)
           </p>
         </div>
       </div>

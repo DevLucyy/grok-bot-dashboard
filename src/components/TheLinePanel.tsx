@@ -233,7 +233,7 @@ export const TheLinePanel: React.FC<Props> = ({
 
             <div className="text-right">
               <span className="text-lg font-mono font-black text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">
-                ${balance.toFixed(2)}
+                ${(balance ?? 0).toFixed(2)}
               </span>
               <div className="text-[8px] font-mono text-yellow-500 uppercase tracking-widest">
                 REAL COMPOUND

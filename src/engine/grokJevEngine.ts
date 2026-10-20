@@ -413,7 +413,7 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     return () => clearInterval(interval);
   }, [balance]);
 
-  const tonightGainPercent = Number((((balance - tonightStart) / tonightStart) * 100).toFixed(2));
+  const tonightGainPercent = tonightStart > 0 ? Number((((balance - tonightStart) / tonightStart) * 100).toFixed(2)) : 0;
 
   return {
     startingCapital,

@@ -102,12 +102,12 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
                 <div className="text-right">
                   <span
                     className={`text-xs font-mono font-bold ${
-                      trader.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                      (trader.pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
                     }`}
                   >
-                    {trader.pnl >= 0
-                      ? `+$${trader.pnl.toFixed(2)}`
-                      : `-$${Math.abs(trader.pnl).toFixed(2)}`}
+                    {(trader.pnl ?? 0) >= 0
+                      ? `+$${(trader.pnl ?? 0).toFixed(2)}`
+                      : `-$${Math.abs(trader.pnl ?? 0).toFixed(2)}`}
                   </span>
                 </div>
               </div>

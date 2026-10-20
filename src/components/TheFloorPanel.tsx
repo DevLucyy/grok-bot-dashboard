@@ -134,8 +134,8 @@ export const TheFloorPanel: React.FC<Props> = ({ traders }) => {
               {/* Trader PnL scaled for real micro-wallet */}
               <div className="mt-1 flex items-center justify-between text-[9px] font-mono pt-1 border-t border-white/5">
                 <span className="text-slate-500">TONIGHT</span>
-                <span className={`font-bold ${trader.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {trader.pnl >= 0 ? `+$${trader.pnl.toFixed(2)}` : `-$${Math.abs(trader.pnl).toFixed(2)}`}
+                <span className={`font-bold ${(trader.pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {(trader.pnl ?? 0) >= 0 ? `+$${(trader.pnl ?? 0).toFixed(2)}` : `-$${Math.abs(trader.pnl ?? 0).toFixed(2)}`}
                 </span>
               </div>
             </div>

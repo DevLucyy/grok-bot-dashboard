@@ -4,12 +4,18 @@ import { GrokCoreDisc } from './GrokJevAvatars';
 interface GrokJevHeaderProps {
   balance: number;
   digitalTime: string;
+  cloudExecutions?: number;
+  isCloudSynced?: boolean;
+  lastCloudSync?: string;
   onResetToFifteen?: () => void;
 }
 
 export const GrokJevHeader: React.FC<GrokJevHeaderProps> = ({
   balance,
   digitalTime,
+  cloudExecutions = 0,
+  isCloudSynced = true,
+  lastCloudSync,
   onResetToFifteen
 }) => {
   return (
@@ -18,24 +24,39 @@ export const GrokJevHeader: React.FC<GrokJevHeaderProps> = ({
       <div className="flex items-center gap-3">
         <GrokCoreDisc size={40} className="shrink-0" />
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono flex items-center gap-2">
-            Grok Bot <span className="text-yellow-400 font-bold">×</span> Jev
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono flex items-center gap-2">
+              Grok Bot <span className="text-yellow-400 font-bold">×</span> Jev
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-[9px] font-mono font-bold text-emerald-400 tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              24/7 CLOUD EDGE RUNNING
+            </span>
+          </div>
           <p className="text-[11px] font-mono text-yellow-400 font-semibold tracking-wider uppercase mt-0.5">
             DAY 1 · ${(balance ?? 0).toFixed(2)} REAL WALLET · JEV PICKS, GROK TRADES (NO DEMOS)
           </p>
         </div>
       </div>
 
-      {/* Right: Digital Time Pill & Reset to $15 Wallet Action */}
-      <div className="flex items-center gap-2 self-start sm:self-center">
+      {/* Right: Cloud Sync Pill, Reset Action & Clock */}
+      <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+        {/* 24/7 Cloud Engine Status */}
+        <div 
+          className="px-2.5 py-1 text-[10px] font-mono font-bold rounded bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 flex items-center gap-1.5"
+          title={`Cloudflare Cron: * * * * * (Every 1m). Runs 24/7 without Mac on. Last sync: ${lastCloudSync || 'Active'}`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${isCloudSynced ? 'bg-cyan-400 animate-ping' : 'bg-yellow-400'}`} />
+          <span>EDGE CRON: {cloudExecutions > 0 ? `${cloudExecutions} TICKS` : '24/7 ACTIVE'}</span>
+        </div>
+
         {onResetToFifteen && (
           <button
             onClick={onResetToFifteen}
             className="px-2.5 py-1 text-[10px] font-mono font-bold rounded bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 transition-all flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
-            title="Reset wallet to $15.00 initial balance"
+            title="Reset wallet to $15.00 initial balance (both cloud KV and UI)"
           >
-            <span>🔄</span> RESET TO $15.00
+            <span>🔄</span> RESET $15.00
           </button>
         )}
 

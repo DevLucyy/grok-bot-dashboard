@@ -31,6 +31,9 @@ export function App() {
           <GrokJevHeader
             balance={engine.balance}
             digitalTime={engine.digitalTime}
+            cloudExecutions={engine.cloudExecutions}
+            isCloudSynced={engine.isCloudSynced}
+            lastCloudSync={engine.lastCloudSync}
             onResetToFifteen={() => engine.resetToWallet(15.00)}
           />
 

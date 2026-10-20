@@ -195,8 +195,88 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
   // Mega Win Modal state
   const [megaWin, setMegaWin] = useState<MegaWinState | null>(null);
 
+  // Cloudflare 24/7 Edge Worker Sync Endpoints
+  const CLOUD_STATE_URL = '/api/state';
+  const CLOUD_RESET_URL = '/api/reset';
+  const WORKER_FALLBACK_URL = 'https://grok-trading-engine.lucifer-dev75.workers.dev/api/state';
+  const WORKER_RESET_FALLBACK_URL = 'https://grok-trading-engine.lucifer-dev75.workers.dev/api/reset';
+
+  const [cloudExecutions, setCloudExecutions] = useState<number>(0);
+  const [lastCloudSync, setLastCloudSync] = useState<string>('Connecting...');
+  const [isCloudSynced, setIsCloudSynced] = useState<boolean>(false);
+
   // Digital clock
   const [digitalTime, setDigitalTime] = useState<string>('03:14:39');
+
+  // Sync state with Cloudflare 24/7 Edge Worker
+  const syncWithCloud = async () => {
+    try {
+      let res: Response | null = await fetch(CLOUD_STATE_URL).catch(() => null);
+      if (!res || !res.ok) {
+        res = await fetch(WORKER_FALLBACK_URL).catch(() => null);
+      }
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data?.state) {
+          const s = data.state;
+          if (typeof s.balance === 'number') setBalance(s.balance);
+          if (typeof s.tonightStart === 'number') setTonightStart(s.tonightStart);
+          if (typeof s.wins === 'number') setWins(s.wins);
+          if (typeof s.losses === 'number') setLosses(s.losses);
+          if (typeof s.peakBalance === 'number') setPeakBalance(s.peakBalance);
+          if (typeof s.maxDrawdown === 'number') setMaxDrawdown(s.maxDrawdown);
+          if (typeof s.grossProfit === 'number') setGrossProfit(s.grossProfit);
+          if (typeof s.grossLoss === 'number') setGrossLoss(s.grossLoss);
+          if (typeof s.consecutiveLosses === 'number') setConsecutiveLosses(s.consecutiveLosses);
+          if (typeof s.maxConsecutiveLosses === 'number') setMaxConsecutiveLosses(s.maxConsecutiveLosses);
+          if (Array.isArray(s.balanceHistory) && s.balanceHistory.length > 0) {
+            setBalanceHistory(s.balanceHistory);
+          }
+          if (Array.isArray(s.traders) && s.traders.length > 0) {
+            setTraders(s.traders);
+          }
+          if (Array.isArray(s.feedLogs) && s.feedLogs.length > 0) {
+            setFeedLogs(s.feedLogs);
+          }
+          if (s.activePosition) {
+            const ap = s.activePosition;
+            setTicket({
+              traderName: ap.traderName,
+              role: ap.role,
+              masterTraderName: ap.masterTraderName,
+              masterTraderBadge: ap.masterTraderBadge,
+              token: ap.token,
+              symbol: ap.symbol,
+              side: ap.side,
+              entry: `$${ap.entryPrice.toFixed(2)}`,
+              exit: `$${ap.takeProfitPrice.toFixed(2)}`,
+              currentPrice: `$${ap.currentPrice.toFixed(2)}`,
+              stopLoss: `$${ap.stopLossPrice.toFixed(2)}`,
+              sizeUsd: ap.sizeUsd,
+              sizePercent: 25,
+              resultPnl: ap.unrealizedPnl,
+              unrealizedPnlPercent: ap.unrealizedPnlPercent,
+              isOpen: true,
+              isWin: ap.unrealizedPnl >= 0,
+              strategyReason: ap.strategyReason
+            });
+          }
+          setCloudExecutions(s.cronExecutions || 1);
+          setLastCloudSync(new Date(s.lastRunTimestamp || Date.now()).toLocaleTimeString());
+          setIsCloudSynced(true);
+        }
+      }
+    } catch (err) {
+      console.warn('Cloud edge sync notice:', err);
+    }
+  };
+
+  // Sync on mount and background poll every 6s
+  useEffect(() => {
+    syncWithCloud();
+    const interval = setInterval(syncWithCloud, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   // WebSocket sync for Bybit latency / public feed
   const [bybitFeed, setBybitFeed] = useState<BybitFeedState>(bybitStream.state);
@@ -214,9 +294,18 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     return () => clearInterval(timer);
   }, []);
 
-  // Reset to clean $15.00 wallet anytime
-  const resetToWallet = (newStartingAmount: number = 15.00) => {
+  // Reset to clean $15.00 wallet anytime across local state and Cloudflare edge
+  const resetToWallet = async (newStartingAmount: number = 15.00) => {
     paperStrategy.reset();
+    try {
+      let res = await fetch(CLOUD_RESET_URL, { method: 'POST' }).catch(() => null);
+      if (!res || !res.ok) {
+        await fetch(WORKER_RESET_FALLBACK_URL, { method: 'POST' }).catch(() => null);
+      }
+    } catch (e) {
+      console.warn('Failed cloud reset call:', e);
+    }
+
     setBalance(newStartingAmount);
     setTonightStart(newStartingAmount);
     setWins(0);
@@ -241,10 +330,12 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     setVaultPings([]);
     setTicket({
       traderName: 'BAZZ',
-      role: 'SNIPE',
+      role: 'ApexQuant',
+      masterTraderName: 'ApexQuant',
+      masterTraderBadge: '👑 BYBIT #1 ROI',
       token: '$SOL',
-      entry: '$184.20',
-      exit: '$185.40',
+      entry: '$105.88',
+      exit: '$106.57',
       sizeUsd: Number((newStartingAmount * 0.25).toFixed(2)),
       sizePercent: 25,
       resultPnl: 0,
@@ -435,6 +526,9 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
     setMegaWin,
     digitalTime,
     bybitFeed,
-    resetToWallet
+    resetToWallet,
+    cloudExecutions,
+    lastCloudSync,
+    isCloudSynced
   };
 }

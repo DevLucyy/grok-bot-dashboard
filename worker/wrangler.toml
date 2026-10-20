@@ -1,0 +1,10 @@
+name = "grok-trading-engine"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "TRADING_STATE"
+id = "a0754e045341459780d3f269f54d6de2"

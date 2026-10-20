@@ -71,8 +71,15 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
               ACTIVE
             </span>
           </div>
-          <div className="text-xl font-mono font-black text-yellow-400 tracking-wider">
-            {ticket.token}
+          <div className="flex items-center justify-between">
+            <div className="text-xl font-mono font-black text-yellow-400 tracking-wider">
+              {ticket.token}
+            </div>
+            {ticket.bybitOrderId && (
+              <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40 shadow-sm animate-pulse">
+                BYBIT #{ticket.bybitOrderId.slice(-6)}
+              </span>
+            )}
           </div>
         </div>
       </div>

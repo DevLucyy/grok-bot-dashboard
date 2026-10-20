@@ -15,9 +15,13 @@ import { BybitTestnetModal } from './components/BybitTestnetModal';
 import { loadBybitCredentials, BybitCredentials } from './engine/bybitClient';
 
 export function App() {
-  const engine = useGrokJevEngine();
-  const [isBybitModalOpen, setIsBybitModalOpen] = useState(false);
   const [bybitCreds, setBybitCreds] = useState<BybitCredentials>(loadBybitCredentials());
+  const [autoExecuteTestnet, setAutoExecuteTestnet] = useState<boolean>(() => {
+    return localStorage.getItem('bybit_auto_execute_testnet') !== 'false';
+  });
+
+  const engine = useGrokJevEngine(bybitCreds, autoExecuteTestnet);
+  const [isBybitModalOpen, setIsBybitModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#070709] text-slate-200 p-2 sm:p-4 md:p-6 font-mono select-none antialiased">
@@ -117,6 +121,11 @@ export function App() {
         onCredentialsChange={setBybitCreds}
         marketCategory="BYBIT_TESTNET"
         onSelectBybitMarket={() => {}}
+        autoExecuteTestnet={autoExecuteTestnet}
+        onToggleAutoExecuteTestnet={(val) => {
+          setAutoExecuteTestnet(val);
+          localStorage.setItem('bybit_auto_execute_testnet', val ? 'true' : 'false');
+        }}
       />
     </div>
   );

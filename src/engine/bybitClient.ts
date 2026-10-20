@@ -87,6 +87,203 @@ export function clearBybitCredentials(): void {
   }
 }
 
+/**
+ * Browser-native Web Crypto HMAC-SHA256 signature generator for Bybit V5
+ */
+export async function generateBybitSignature(secret: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await window.crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await window.crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export interface BybitOrderResult {
+  ok: boolean;
+  orderId?: string;
+  orderLinkId?: string;
+  error?: string;
+  symbol?: string;
+  side?: string;
+  qty?: string;
+}
+
+export interface BybitWalletCheckResult {
+  ok: boolean;
+  totalEquity?: number;
+  availableBalance?: number;
+  coins?: { coin: string; walletBalance: string; availableToWithdraw: string }[];
+  error?: string;
+  accountType?: string;
+}
+
+const BYBIT_TESTNET_BASE = 'https://api-testnet.bybit.com';
+
+/**
+ * Check connection and retrieve real Bybit Testnet wallet balance
+ */
+export async function checkBybitTestnetWallet(creds: BybitCredentials): Promise<BybitWalletCheckResult> {
+  if (!creds.apiKey || !creds.apiSecret) {
+    return { ok: false, error: 'API Key or Secret missing' };
+  }
+
+  const timestamp = Date.now().toString();
+  const recvWindow = '5000';
+  const queryString = 'accountType=UNIFIED';
+  const preSignString = timestamp + creds.apiKey + recvWindow + queryString;
+
+  try {
+    const signature = await generateBybitSignature(creds.apiSecret, preSignString);
+    const res = await fetch(`${BYBIT_TESTNET_BASE}/v5/account/wallet-balance?${queryString}`, {
+      method: 'GET',
+      headers: {
+        'X-BAPI-API-KEY': creds.apiKey,
+        'X-BAPI-TIMESTAMP': timestamp,
+        'X-BAPI-RECV-WINDOW': recvWindow,
+        'X-BAPI-SIGN': signature,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await res.json();
+    if (data.retCode !== 0) {
+      return await checkBybitContractWallet(creds);
+    }
+
+    const list = data.result?.list?.[0];
+    const totalEquity = list ? parseFloat(list.totalEquity || '0') : 0;
+    const availableBalance = list ? parseFloat(list.totalAvailableBalance || '0') : 0;
+    const coins = list?.coin || [];
+
+    return {
+      ok: true,
+      totalEquity,
+      availableBalance,
+      coins,
+      accountType: 'UNIFIED'
+    };
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Failed to fetch Bybit Testnet wallet balance' };
+  }
+}
+
+async function checkBybitContractWallet(creds: BybitCredentials): Promise<BybitWalletCheckResult> {
+  const timestamp = Date.now().toString();
+  const recvWindow = '5000';
+  const queryString = 'accountType=CONTRACT';
+  const preSignString = timestamp + creds.apiKey + recvWindow + queryString;
+
+  try {
+    const signature = await generateBybitSignature(creds.apiSecret, preSignString);
+    const res = await fetch(`${BYBIT_TESTNET_BASE}/v5/account/wallet-balance?${queryString}`, {
+      method: 'GET',
+      headers: {
+        'X-BAPI-API-KEY': creds.apiKey,
+        'X-BAPI-TIMESTAMP': timestamp,
+        'X-BAPI-RECV-WINDOW': recvWindow,
+        'X-BAPI-SIGN': signature,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await res.json();
+    if (data.retCode !== 0) {
+      return { ok: false, error: data.retMsg || `Bybit Error Code ${data.retCode}` };
+    }
+
+    const list = data.result?.list?.[0];
+    const totalEquity = list ? parseFloat(list.totalEquity || '0') : 0;
+    const availableBalance = list ? parseFloat(list.totalAvailableBalance || '0') : 0;
+
+    return {
+      ok: true,
+      totalEquity,
+      availableBalance,
+      coins: list?.coin || [],
+      accountType: 'CONTRACT'
+    };
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Failed to fetch Contract wallet' };
+  }
+}
+
+/**
+ * Place a real paper order on Bybit Testnet V5 Orderbook
+ */
+export async function placeBybitTestnetOrder(
+  creds: BybitCredentials,
+  params: {
+    symbol: string;
+    side: 'Buy' | 'Sell';
+    qty: string;
+    orderType?: 'Market' | 'Limit';
+    price?: string;
+    reduceOnly?: boolean;
+  }
+): Promise<BybitOrderResult> {
+  if (!creds.apiKey || !creds.apiSecret) {
+    return { ok: false, error: 'API credentials not configured' };
+  }
+
+  const timestamp = Date.now().toString();
+  const recvWindow = '5000';
+
+  const bodyObj: any = {
+    category: 'linear',
+    symbol: params.symbol,
+    side: params.side,
+    orderType: params.orderType || 'Market',
+    qty: params.qty,
+    timeInForce: 'IOC',
+    reduceOnly: Boolean(params.reduceOnly)
+  };
+
+  if (params.orderType === 'Limit' && params.price) {
+    bodyObj.price = params.price;
+  }
+
+  const bodyJson = JSON.stringify(bodyObj);
+  const preSignString = timestamp + creds.apiKey + recvWindow + bodyJson;
+
+  try {
+    const signature = await generateBybitSignature(creds.apiSecret, preSignString);
+    const res = await fetch(`${BYBIT_TESTNET_BASE}/v5/order/create`, {
+      method: 'POST',
+      headers: {
+        'X-BAPI-API-KEY': creds.apiKey,
+        'X-BAPI-TIMESTAMP': timestamp,
+        'X-BAPI-RECV-WINDOW': recvWindow,
+        'X-BAPI-SIGN': signature,
+        'Content-Type': 'application/json'
+      },
+      body: bodyJson
+    });
+
+    const data = await res.json();
+    if (data.retCode !== 0) {
+      return { ok: false, error: data.retMsg || `Bybit Error ${data.retCode}` };
+    }
+
+    return {
+      ok: true,
+      orderId: data.result?.orderId,
+      orderLinkId: data.result?.orderLinkId,
+      symbol: params.symbol,
+      side: params.side,
+      qty: params.qty
+    };
+  } catch (err: any) {
+    return { ok: false, error: err.message || 'Failed to execute order on Bybit Testnet' };
+  }
+}
+
 function generateInitialKlines(basePrice: number, count = 40): BybitKline[] {
   const klines: BybitKline[] = [];
   const now = Date.now();

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { bybitStream, BybitFeedState } from './bybitClient';
+import { bybitStream, BybitFeedState, placeBybitTestnetOrder, BybitCredentials } from './bybitClient';
 
 export interface JevToken {
   symbol: string;
@@ -54,6 +54,7 @@ export interface TicketState {
   resultPnl: number;
   isOpen: boolean;
   isWin: boolean;
+  bybitOrderId?: string;
 }
 
 export interface FunnelState {
@@ -76,6 +77,7 @@ export interface FeedFill {
   pnl: number;
   isLoss: boolean;
   isMega?: boolean;
+  bybitOrderId?: string;
 }
 
 export interface MegaWinState {
@@ -88,7 +90,7 @@ export interface MegaWinState {
   vault: number;
 }
 
-export function useGrokJevEngine() {
+export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestnet: boolean = true) {
   // Real $15.00 Wallet State Baseline
   const [startingCapital] = useState<number>(15.00);
   const [balance, setBalance] = useState<number>(22.94); // Compounded live from $15.00
@@ -293,6 +295,41 @@ export function useGrokJevEngine() {
           if (p < 1) return `$${p.toFixed(4)}`;
           return `$${p.toFixed(2)}`;
         };
+
+        // Bybit Testnet automated execution if configured
+        if (bybitCreds?.isConfigured && autoExecuteTestnet) {
+          const symbolMap: Record<string, { symbol: string; qty: string }> = {
+            '$SOL': { symbol: 'SOLUSDT', qty: '0.1' },
+            '$DOGE': { symbol: 'DOGEUSDT', qty: '50' },
+            '$PEPE': { symbol: '1000PEPEUSDT', qty: '1000' },
+            '$SUI': { symbol: 'SUIUSDT', qty: '5' },
+            '$WIF': { symbol: 'WIFUSDT', qty: '2' },
+            '$BONK': { symbol: '1000BONKUSDT', qty: '500' },
+          };
+          const target = symbolMap[tokenObj.symbol] || { symbol: 'SOLUSDT', qty: '0.1' };
+
+          placeBybitTestnetOrder(bybitCreds, {
+            symbol: target.symbol,
+            side: 'Buy',
+            qty: target.qty,
+            orderType: 'Market'
+          }).then(res => {
+            if (res.ok && res.orderId) {
+              setTicket(t => ({ ...t, bybitOrderId: res.orderId }));
+
+              // Automatically schedule position exit on Bybit Testnet
+              setTimeout(() => {
+                placeBybitTestnetOrder(bybitCreds, {
+                  symbol: target.symbol,
+                  side: 'Sell',
+                  qty: target.qty,
+                  orderType: 'Market',
+                  reduceOnly: true
+                }).catch(() => {});
+              }, 2200);
+            }
+          }).catch(() => {});
+        }
 
         // Update active ticket
         setTicket({

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { bybitStream, BybitFeedState, placeBybitTestnetOrder, BybitCredentials } from './bybitClient';
+import { paperStrategy, PaperTradeFill } from './paperTradingEngine';
 
 export interface JevToken {
   symbol: string;
@@ -47,14 +48,20 @@ export interface TicketState {
   traderName: string;
   role: string;
   token: string;
+  symbol?: string;
+  side?: 'Long' | 'Short';
   entry: string;
   exit: string;
+  currentPrice?: string;
+  stopLoss?: string;
   sizeUsd: number;
   sizePercent: number;
   resultPnl: number;
+  unrealizedPnlPercent?: number;
   isOpen: boolean;
   isWin: boolean;
   bybitOrderId?: string;
+  strategyReason?: string;
 }
 
 export interface FunnelState {
@@ -207,6 +214,7 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
 
   // Reset to clean $15.00 wallet anytime
   const resetToWallet = (newStartingAmount: number = 15.00) => {
+    paperStrategy.reset();
     setBalance(newStartingAmount);
     setTonightStart(newStartingAmount);
     setWins(0);
@@ -233,258 +241,159 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
       traderName: 'BAZZ',
       role: 'SNIPE',
       token: '$SOL',
-      entry: '$178.20',
-      exit: '$180.40',
+      entry: '$184.20',
+      exit: '$185.40',
       sizeUsd: Number((newStartingAmount * 0.25).toFixed(2)),
       sizePercent: 25,
       resultPnl: 0,
-      isOpen: true,
+      isOpen: false,
       isWin: true
     });
   };
 
-  // Autonomous Copy-Trading Cycle with REAL-WORLD MARKET PROBABILITY
+  // 1. Smooth Conveyor & Funnel Pipeline Animation
   useEffect(() => {
-    const interval = setInterval(() => {
-      // 1. Advance conveyor station smoothly
+    const conveyorInterval = setInterval(() => {
       setActiveStationIndex(prev => (prev + 1) % 6);
-
-      // 2. Increment Universe & Jev Scans
       setFunnel(f => ({
         ...f,
-        universe: f.universe + Math.floor(Math.random() * 4 + 1),
+        universe: f.universe + Math.floor(Math.random() * 3 + 1),
         liquidity: f.liquidity + (Math.random() > 0.6 ? 1 : 0),
         jevGate: f.jevGate + (Math.random() > 0.8 ? 1 : 0)
       }));
-
-      // 3. Occasional Rug Filter by Jev (rug bin increment)
       if (Math.random() > 0.75) {
         setRugBinCount(c => c + 1);
       }
-
-      // 4. Trade Execution with Real-world probabilities & risk physics
-      if (Math.random() > 0.50 && balance > 0.40) {
-        const traderOrder = ['BAZZ', 'OKKO', 'LUX', 'FERRO', 'QUILO', 'TOMI'];
-        const chosenTrader = traderOrder[Math.floor(Math.random() * traderOrder.length)];
-        const tokenObj = WATCHLIST_TOKENS[Math.floor(Math.random() * WATCHLIST_TOKENS.length)];
-
-        // Position size: strictly 25% of current balance (min $0.50)
-        const currentPosSize = Math.max(0.50, Number((balance * 0.25).toFixed(2)));
-
-        let isWin = false;
-        let pnl = 0;
-        let isMega = false;
-
-        if (simMode === 'REAL_MARKET') {
-          // REAL-WORLD MARKET PROBABILITY MODEL:
-          // Live Bybit orderbook depth pressure
-          const btcDepth = bybitFeed.depth['BTCUSDT'];
-          const bookImbalance = btcDepth ? btcDepth.imbalance : 0; // -1 (heavy sellers) to +1 (heavy buyers)
-
-          // Base quantitative momentum scalping win probability: ~48%
-          let winProbability = 0.48 + (bookImbalance * 0.05) + ((Math.random() - 0.5) * 0.06);
-          // Realistic crypto scalping boundaries: 38% to 54%
-          winProbability = Math.max(0.38, Math.min(0.54, winProbability));
-
-          isWin = Math.random() < winProbability;
-
-          if (isWin) {
-            // Realistic win: +3.5% to +8.5% move on position
-            // Rare momentum breakout (8% of wins): +18% to +35% move
-            const isRunner = Math.random() < 0.08;
-            const movePct = isRunner ? (Math.random() * 0.17 + 0.18) : (Math.random() * 0.05 + 0.035);
-            pnl = Number((currentPosSize * movePct).toFixed(2));
-            if (isRunner) isMega = true;
-          } else {
-            // Realistic loss: -3.0% to -5.5% stop loss
-            // Rare slippage gap-down in low liquidity (5% of losses): -12% to -20% stop slip
-            const isSlippageGap = Math.random() < 0.05;
-            const stopPct = isSlippageGap ? (Math.random() * 0.08 + 0.12) : (Math.random() * 0.025 + 0.03);
-            pnl = -Number((currentPosSize * stopPct).toFixed(2));
-          }
-
-          // Deduct real market execution slippage (0.15% to 0.35%)
-          const slippage = Number((currentPosSize * (Math.random() * 0.002 + 0.0015)).toFixed(3));
-          // Deduct real exchange taker fee (0.055% open + 0.055% close = 0.11%)
-          const fee = Number((currentPosSize * 0.0011).toFixed(3));
-          pnl = Number((pnl - slippage - fee).toFixed(2));
-        } else {
-          // TIKTOK DEMO MODE (Ideal viral presentation)
-          isWin = Math.random() < 0.82;
-          if (isWin) {
-            if (Math.random() > 0.85) {
-              const mult = Math.random() * 0.8 + 1.0;
-              pnl = Number((currentPosSize * mult).toFixed(2));
-              isMega = true;
-            } else {
-              const pct = Math.random() * 0.20 + 0.08;
-              pnl = Number((currentPosSize * pct).toFixed(2));
-            }
-          } else {
-            const pct = Math.random() * 0.015 + 0.025;
-            pnl = -Number((currentPosSize * pct).toFixed(2));
-          }
-          const fee = Number((currentPosSize * 0.00055).toFixed(3));
-          pnl = Number((pnl - fee).toFixed(2));
-        }
-
-        const nowTime = new Date().toTimeString().split(' ')[0];
-        const newBal = Math.max(0, Number((balance + pnl).toFixed(2)));
-        setBalance(newBal);
-
-        // Update peak balance and maximum drawdown
-        setPeakBalance(prevPeak => {
-          const nextPeak = Math.max(prevPeak, newBal);
-          if (nextPeak > 0) {
-            const currentDd = Number((((nextPeak - newBal) / nextPeak) * 100).toFixed(1));
-            setMaxDrawdown(prevDd => Math.max(prevDd, currentDd));
-          }
-          return nextPeak;
-        });
-
-        if (isWin) {
-          setWins(w => w + 1);
-          setGrossProfit(gp => Number((gp + pnl).toFixed(2)));
-          setConsecutiveLosses(0);
-          setVaultPings(prev => [`+$${pnl.toFixed(2)}`, ...prev.slice(0, 2)]);
-        } else {
-          setLosses(l => l + 1);
-          setGrossLoss(gl => Number((gl + Math.abs(pnl)).toFixed(2)));
-          setConsecutiveLosses(cl => {
-            const nextCl = cl + 1;
-            setMaxConsecutiveLosses(m => Math.max(m, nextCl));
-            return nextCl;
-          });
-        }
-
-        // Realistic entry & exit based on real token price
-        const entryPriceNum = tokenObj.rawPrice;
-        const exitPriceNum = isWin
-          ? entryPriceNum * (1 + (isMega ? 0.35 : 0.04))
-          : entryPriceNum * 0.97;
-
-        const formatPrice = (p: number) => {
-          if (p < 0.0001) return `$${p.toFixed(8)}`;
-          if (p < 1) return `$${p.toFixed(4)}`;
-          return `$${p.toFixed(2)}`;
-        };
-
-        // Bybit Testnet automated execution if configured
-        if (bybitCreds?.isConfigured && autoExecuteTestnet) {
-          const symbolMap: Record<string, { symbol: string; qty: string }> = {
-            '$SOL': { symbol: 'SOLUSDT', qty: '0.1' },
-            '$DOGE': { symbol: 'DOGEUSDT', qty: '50' },
-            '$PEPE': { symbol: '1000PEPEUSDT', qty: '1000' },
-            '$SUI': { symbol: 'SUIUSDT', qty: '5' },
-            '$WIF': { symbol: 'WIFUSDT', qty: '2' },
-            '$BONK': { symbol: '1000BONKUSDT', qty: '500' },
-          };
-          const target = symbolMap[tokenObj.symbol] || { symbol: 'SOLUSDT', qty: '0.1' };
-
-          placeBybitTestnetOrder(bybitCreds, {
-            symbol: target.symbol,
-            side: 'Buy',
-            qty: target.qty,
-            orderType: 'Market'
-          }).then(res => {
-            if (res.ok && res.orderId) {
-              setTicket(t => ({ ...t, bybitOrderId: res.orderId }));
-
-              // Automatically schedule position exit on Bybit Testnet
-              setTimeout(() => {
-                placeBybitTestnetOrder(bybitCreds, {
-                  symbol: target.symbol,
-                  side: 'Sell',
-                  qty: target.qty,
-                  orderType: 'Market',
-                  reduceOnly: true
-                }).catch(() => {});
-              }, 2200);
-            }
-          }).catch(() => {});
-        }
-
-        // Update active ticket
-        setTicket({
-          traderName: chosenTrader,
-          role: chosenTrader === 'BAZZ' ? 'SNIPE' : chosenTrader === 'OKKO' ? 'LADDER' : chosenTrader === 'LUX' ? 'BOOK' : chosenTrader === 'FERRO' ? 'TRACK' : chosenTrader === 'QUILO' ? 'ARB' : 'EXIT',
-          token: tokenObj.symbol,
-          entry: formatPrice(entryPriceNum),
-          exit: formatPrice(exitPriceNum),
-          sizeUsd: currentPosSize,
-          sizePercent: 25,
-          resultPnl: pnl,
-          isOpen: true,
-          isWin
-        });
-
-        // Update Trader Leaderboard P&L and 2-loss rule
-        setTraders(prev => prev.map(t => {
-          if (t.name === chosenTrader) {
-            const nextPnl = Number((t.pnl + pnl).toFixed(2));
-            const nextLosses = isWin ? 0 : t.consecutiveLosses + 1;
-            const status = nextLosses >= 2 ? 'ON NOTICE' : undefined;
-            return {
-              ...t,
-              pnl: nextPnl,
-              consecutiveLosses: nextLosses,
-              status
-            };
-          }
-          return t;
-        }));
-
-        // Feed log with real token descriptions
-        const fillDesc = isMega
-          ? `${tokenObj.symbol} · booked +140% breakout expansion`
-          : `${tokenObj.symbol} ${isWin ? 'clean profit scalp target' : 'tight stop cut before stall'}`;
-
-        setFeedLogs(prev => [
-          {
-            id: `f_${Date.now()}`,
-            time: nowTime,
-            trader: chosenTrader,
-            role: chosenTrader === 'BAZZ' ? 'SNIPE' : chosenTrader === 'OKKO' ? 'LADDER' : chosenTrader === 'LUX' ? 'BOOK' : chosenTrader === 'FERRO' ? 'TRACK' : chosenTrader === 'QUILO' ? 'ARB' : 'EXIT',
-            token: tokenObj.symbol,
-            desc: fillDesc,
-            pnl,
-            isLoss: !isWin,
-            isMega
-          },
-          ...prev.slice(0, 40)
-        ]);
-
-        // Stepped chart history update on significant trades or losses
-        if (isMega || !isWin || Math.random() > 0.35) {
-          setBalanceHistory(prev => [
-            ...prev,
-            {
-              time: nowTime.slice(3, 8),
-              balance: newBal,
-              flag: isMega ? `${chosenTrader} +$${pnl.toFixed(2)}` : (!isWin && pnl <= -0.15 ? `${chosenTrader} -$${Math.abs(pnl).toFixed(2)}` : undefined),
-              isLoss: !isWin
-            }
-          ]);
-        }
-
-        // Trigger Mega Win Modal Banner!
-        if (isMega) {
-          setMegaWin({
-            isOpen: true,
-            trader: chosenTrader,
-            role: chosenTrader === 'BAZZ' ? 'SNIPE' : 'BOOK',
-            token: tokenObj.symbol,
-            desc: `first buyer at ${formatPrice(entryPriceNum)}, exited at ${formatPrice(exitPriceNum)}`,
-            pnl,
-            vault: newBal
-          });
-          setTimeout(() => setMegaWin(null), 3800);
-        }
-      }
     }, 2400);
 
-    return () => clearInterval(interval);
-  }, [balance, simMode, bybitFeed]);
+    return () => clearInterval(conveyorInterval);
+  }, []);
+
+  // 2. Real Live-Market Paper Trading Engine: Evaluated on genuine Bybit price ticks
+  useEffect(() => {
+    if (balance <= 0) return;
+
+    const activePos = paperStrategy.evaluateTick(bybitFeed, balance, (fill: PaperTradeFill) => {
+      // ON REAL TRADE CLOSE (Executed at actual live exchange price!)
+      const realizedPnl = fill.pnl;
+      const newBal = Math.max(0, Number((balance + realizedPnl).toFixed(2)));
+      setBalance(newBal);
+
+      // Track Peak Balance and Maximum Drawdown
+      setPeakBalance(prevPeak => {
+        const nextPeak = Math.max(prevPeak, newBal);
+        if (nextPeak > 0) {
+          const currentDd = Number((((nextPeak - newBal) / nextPeak) * 100).toFixed(1));
+          setMaxDrawdown(prevDd => Math.max(prevDd, currentDd));
+        }
+        return nextPeak;
+      });
+
+      if (fill.isWin) {
+        setWins(w => w + 1);
+        setGrossProfit(gp => Number((gp + realizedPnl).toFixed(2)));
+        setConsecutiveLosses(0);
+        setVaultPings(prev => [`+$${realizedPnl.toFixed(2)}`, ...prev.slice(0, 2)]);
+      } else {
+        setLosses(l => l + 1);
+        setGrossLoss(gl => Number((gl + Math.abs(realizedPnl)).toFixed(2)));
+        setConsecutiveLosses(cl => {
+          const nextCl = cl + 1;
+          setMaxConsecutiveLosses(m => Math.max(m, nextCl));
+          return nextCl;
+        });
+      }
+
+      // Update Individual Squad Trader Performance
+      setTraders(prev => prev.map(t => {
+        if (t.name === fill.trader) {
+          const nextPnl = Number((t.pnl + realizedPnl).toFixed(2));
+          const nextLosses = fill.isWin ? 0 : t.consecutiveLosses + 1;
+          return {
+            ...t,
+            pnl: nextPnl,
+            consecutiveLosses: nextLosses,
+            status: nextLosses >= 2 ? 'ON NOTICE' : undefined
+          };
+        }
+        return t;
+      }));
+
+      // Append to live feed log with REAL exchange prices
+      setFeedLogs(prev => [
+        {
+          id: fill.id,
+          time: fill.time,
+          trader: fill.trader,
+          role: fill.role,
+          token: fill.token,
+          desc: fill.desc,
+          pnl: realizedPnl,
+          isLoss: !fill.isWin,
+          isMega: realizedPnl >= 0.35
+        },
+        ...prev.slice(0, 30)
+      ]);
+
+      // Update Stepped Chart with exact real balance
+      setBalanceHistory(prev => [
+        ...prev,
+        {
+          time: fill.time.slice(0, 5),
+          balance: newBal,
+          flag: `${fill.trader} ${realizedPnl >= 0 ? '+' : '-'}$${Math.abs(realizedPnl).toFixed(2)}`,
+          isLoss: !fill.isWin
+        }
+      ]);
+
+      // If Bybit Testnet credentials exist, route actual testnet order
+      if (bybitCreds?.isConfigured && autoExecuteTestnet) {
+        placeBybitTestnetOrder(bybitCreds, {
+          symbol: fill.token.replace('$', '') + 'USDT',
+          side: fill.side === 'Long' ? 'Sell' : 'Buy',
+          qty: '0.1',
+          orderType: 'Market',
+          reduceOnly: true
+        }).catch(() => {});
+      }
+
+      // Trigger Mega Win Modal if substantial move booked
+      if (fill.isWin && realizedPnl >= 0.40) {
+        setMegaWin({
+          isOpen: true,
+          trader: fill.trader,
+          role: fill.role,
+          token: fill.token,
+          desc: `Real Bybit execution: ${fill.side} exit at $${fill.exitPrice.toFixed(2)} (+${fill.pnlPercent}%)`,
+          pnl: realizedPnl,
+          vault: newBal
+        });
+        setTimeout(() => setMegaWin(null), 3800);
+      }
+    });
+
+    // Update active ticket with real-time ticking market price and live unrealized P&L
+    if (activePos) {
+      setTicket({
+        traderName: activePos.traderName,
+        role: activePos.role,
+        token: activePos.token,
+        symbol: activePos.symbol,
+        side: activePos.side,
+        entry: `$${activePos.entryPrice.toFixed(2)}`,
+        exit: `$${activePos.takeProfitPrice.toFixed(2)}`,
+        currentPrice: `$${activePos.currentPrice.toFixed(2)}`,
+        stopLoss: `$${activePos.stopLossPrice.toFixed(2)}`,
+        sizeUsd: activePos.sizeUsd,
+        sizePercent: 25,
+        resultPnl: activePos.unrealizedPnl,
+        unrealizedPnlPercent: activePos.unrealizedPnlPercent,
+        isOpen: true,
+        isWin: activePos.unrealizedPnl >= 0,
+        strategyReason: activePos.strategyReason
+      });
+    }
+  }, [bybitFeed, balance]);
 
   const tonightGainPercent = tonightStart > 0 ? Number((((balance - tonightStart) / tonightStart) * 100).toFixed(2)) : 0;
   const winRatePercent = (wins + losses) > 0 ? Number(((wins / (wins + losses)) * 100).toFixed(1)) : 0;

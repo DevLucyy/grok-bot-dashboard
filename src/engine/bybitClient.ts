@@ -512,7 +512,8 @@ class BybitStreamManager {
     this.state.isConnecting = true;
     this.emit();
 
-    const url = 'wss://stream-testnet.bybit.com/v5/public/linear';
+    // Connect directly to Bybit Mainnet Public Stream for 100% real-world crypto price ticks
+    const url = 'wss://stream.bybit.com/v5/public/linear';
 
     try {
       this.ws = new WebSocket(url);
@@ -524,14 +525,18 @@ class BybitStreamManager {
         this.state.lastUpdate = new Date().toTimeString().split(' ')[0];
         this.emit();
 
-        // Subscribe to tickers, L1 orderbooks, and 1m klines
+        // Subscribe to tickers, L1 orderbooks, and 1m klines across active pairs
         const subMsg = {
           op: 'subscribe',
           args: [
             'tickers.BTCUSDT',
             'tickers.ETHUSDT',
             'tickers.SOLUSDT',
+            'tickers.DOGEUSDT',
+            'tickers.SUIUSDT',
             'orderbook.1.BTCUSDT',
+            'orderbook.1.SOLUSDT',
+            'orderbook.1.ETHUSDT',
             'kline.1.BTCUSDT',
             'kline.1.ETHUSDT',
             'kline.1.SOLUSDT'

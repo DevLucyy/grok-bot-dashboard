@@ -1,5 +1,6 @@
 import React from 'react';
 import { TraderStats } from '../engine/grokJevEngine';
+import { BYBIT_MASTER_TRADERS } from '../engine/bybitMasterTraders';
 import {
   CyberCornerBrackets,
   BazzAvatar,
@@ -46,11 +47,11 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
         <div className="flex items-center gap-2">
           <span className="text-yellow-400 font-bold text-xs">👑</span>
           <h3 className="font-mono font-bold tracking-wider text-xs text-yellow-400 uppercase">
-            WHO'S CARRYING
+            WHO'S CARRYING · BYBIT MASTERS
           </h3>
         </div>
-        <span className="text-[10px] font-mono text-slate-400">
-          6 TRADERS · REAL PNL
+        <span className="text-[10px] font-mono text-emerald-400 font-bold">
+          LIVE COPY LEADERBOARD
         </span>
       </div>
 
@@ -60,6 +61,7 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
           const isTop = idx === 0;
           const isOnNotice = trader.status === 'ON NOTICE' || trader.consecutiveLosses >= 2;
           const barWidth = trader.pnl > 0 ? Math.min(100, Math.max(8, (trader.pnl / maxPnl) * 100)) : 6;
+          const master = BYBIT_MASTER_TRADERS.find(m => m.squadBot === trader.name);
 
           return (
             <div
@@ -85,10 +87,10 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-mono font-bold text-white tracking-wide">
-                        {trader.name}
+                        {master ? master.name : trader.name}
                       </span>
-                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-black border border-white/10 text-slate-400">
-                        {trader.role}
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-black border border-white/10 text-yellow-400 font-semibold">
+                        {master ? master.badge : trader.role}
                       </span>
                       {isOnNotice && (
                         <span className="text-[8px] font-mono font-bold text-rose-400 bg-rose-950/80 px-1 rounded border border-rose-500/40 animate-pulse">
@@ -96,6 +98,11 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
                         </span>
                       )}
                     </div>
+                    {master && (
+                      <div className="text-[8px] text-slate-400 mt-0.5">
+                        {master.bybitRank} · {master.followers} followers
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -109,6 +116,11 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
                       ? `+$${(trader.pnl ?? 0).toFixed(2)}`
                       : `-$${Math.abs(trader.pnl ?? 0).toFixed(2)}`}
                   </span>
+                  {master && (
+                    <div className="text-[9px] text-emerald-400 font-semibold">
+                      {master.roi7d} ROI
+                    </div>
+                  )}
                 </div>
               </div>
 

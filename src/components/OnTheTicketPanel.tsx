@@ -44,7 +44,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${ticket.isOpen ? 'bg-cyan-400 animate-ping' : 'bg-slate-500'}`} />
           <h3 className="font-mono font-bold tracking-wider text-xs text-yellow-400 uppercase">
-            ON THE TICKET · LIVE EXECUTION
+            BYBIT MASTER COPY TRADER · LIVE
           </h3>
         </div>
         <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border ${
@@ -52,7 +52,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
             ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
             : 'bg-slate-900 border-slate-700 text-slate-400'
         }`}>
-          {ticket.isOpen ? `${ticket.side?.toUpperCase() || 'LONG'} · LIVE MARKET` : 'SCANNING BYBIT...'}
+          {ticket.isOpen ? `${ticket.side?.toUpperCase() || 'LONG'} · MIRRORING LEADER` : 'SCANNING BYBIT...'}
         </span>
       </div>
 
@@ -67,16 +67,23 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
 
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold text-white tracking-wide">
-              {ticket.traderName} · {ticket.role}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono font-bold text-white tracking-wide">
+                {ticket.masterTraderName ? `Copying ${ticket.masterTraderName}` : `${ticket.traderName} · ${ticket.role}`}
+              </span>
+              {ticket.masterTraderBadge && (
+                <span className="text-[8px] px-1.5 py-0.2 rounded bg-yellow-400/20 text-yellow-300 border border-yellow-500/30 font-bold">
+                  {ticket.masterTraderBadge}
+                </span>
+              )}
+            </div>
             <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border flex items-center gap-1 ${
               ticket.isOpen
                 ? 'text-emerald-400 bg-emerald-950/60 border-emerald-500/30'
                 : 'text-slate-400 bg-slate-900/60 border-slate-700'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full ${ticket.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-              {ticket.isOpen ? 'POSITION OPEN' : 'STANDBY'}
+              {ticket.isOpen ? 'COPY ACTIVE' : 'STANDBY'}
             </span>
           </div>
           <div className="flex items-center justify-between mt-0.5">

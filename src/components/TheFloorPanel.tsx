@@ -1,5 +1,6 @@
 import React from 'react';
 import { TraderStats } from '../engine/grokJevEngine';
+import { BYBIT_MASTER_TRADERS } from '../engine/bybitMasterTraders';
 import {
   CyberCornerBrackets,
   BazzAvatar,
@@ -43,10 +44,10 @@ export const TheFloorPanel: React.FC<Props> = ({ traders }) => {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
           <h3 className="font-mono font-bold tracking-wider text-xs text-yellow-400 uppercase">
-            THE FLOOR
+            THE FLOOR · BYBIT MASTERS
           </h3>
           <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
-            · 6 SEATS
+            · 6 COPY SEATS
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -63,12 +64,12 @@ export const TheFloorPanel: React.FC<Props> = ({ traders }) => {
           <JevAvatar size={26} />
           <div>
             <span className="text-white font-bold text-[11px]">JEV</span>
-            <span className="text-slate-400 text-[9px] ml-1.5">HEAD OF THE FLOOR</span>
+            <span className="text-slate-400 text-[9px] ml-1.5">LEAD COPY DISPATCHER</span>
           </div>
         </div>
         <span className="text-[9px] font-mono text-cyan-400 bg-cyan-950/50 border border-cyan-500/30 px-2 py-0.5 rounded flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-          SCANNING 14 TOKENS
+          MIRRORING BYBIT LEADERS
         </span>
       </div>
 
@@ -77,6 +78,7 @@ export const TheFloorPanel: React.FC<Props> = ({ traders }) => {
         {traders.map((trader) => {
           const isOnNotice = trader.status === 'ON NOTICE' || trader.consecutiveLosses >= 2;
           const isActive = trader.consecutiveLosses === 0;
+          const master = BYBIT_MASTER_TRADERS.find(m => m.squadBot === trader.name);
 
           return (
             <div
@@ -91,11 +93,11 @@ export const TheFloorPanel: React.FC<Props> = ({ traders }) => {
                 <div className="flex items-center gap-1.5">
                   {getAvatar(trader.name, isActive)}
                   <div>
-                    <div className="text-[10px] font-mono font-bold text-white leading-tight">
-                      {trader.name}
+                    <div className="text-[10px] font-mono font-bold text-white leading-tight truncate">
+                      {master ? master.name : trader.name}
                     </div>
-                    <div className="text-[8px] font-mono text-slate-400">
-                      {trader.role}
+                    <div className="text-[8px] font-mono text-yellow-400/90 truncate">
+                      {master ? master.badge : trader.role}
                     </div>
                   </div>
                 </div>
@@ -133,7 +135,7 @@ export const TheFloorPanel: React.FC<Props> = ({ traders }) => {
 
               {/* Trader PnL scaled for real micro-wallet */}
               <div className="mt-1 flex items-center justify-between text-[9px] font-mono pt-1 border-t border-white/5">
-                <span className="text-slate-500">TONIGHT</span>
+                <span className="text-slate-500">REAL P&L</span>
                 <span className={`font-bold ${(trader.pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {(trader.pnl ?? 0) >= 0 ? `+$${(trader.pnl ?? 0).toFixed(2)}` : `-$${Math.abs(trader.pnl ?? 0).toFixed(2)}`}
                 </span>

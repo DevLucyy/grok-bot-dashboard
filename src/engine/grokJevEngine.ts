@@ -47,6 +47,8 @@ export interface TraderStats {
 export interface TicketState {
   traderName: string;
   role: string;
+  masterTraderName?: string;
+  masterTraderBadge?: string;
   token: string;
   symbol?: string;
   side?: 'Long' | 'Short';
@@ -377,6 +379,8 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
       setTicket({
         traderName: activePos.traderName,
         role: activePos.role,
+        masterTraderName: activePos.masterTraderName,
+        masterTraderBadge: activePos.masterTraderBadge,
         token: activePos.token,
         symbol: activePos.symbol,
         side: activePos.side,

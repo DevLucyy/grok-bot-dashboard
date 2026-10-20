@@ -1,9 +1,13 @@
 import { BybitFeedState } from './bybitClient';
+import { BYBIT_MASTER_TRADERS } from './bybitMasterTraders';
 
 export interface ActivePaperPosition {
   id: string;
   traderName: string;
   role: string;
+  masterTraderName: string;
+  masterTraderBadge: string;
+  masterTraderRoi: string;
   token: string;
   symbol: string;
   side: 'Long' | 'Short';
@@ -27,6 +31,8 @@ export interface PaperTradeFill {
   time: string;
   trader: string;
   role: string;
+  masterTraderName: string;
+  masterTraderBadge: string;
   token: string;
   side: 'Long' | 'Short';
   entryPrice: number;
@@ -39,15 +45,6 @@ export interface PaperTradeFill {
   holdTimeSeconds: number;
   desc: string;
 }
-
-const TRADERS_ROSTER = [
-  { name: 'BAZZ', role: 'SNIPE' },
-  { name: 'OKKO', role: 'LADDER' },
-  { name: 'LUX', role: 'BOOK' },
-  { name: 'QUILO', role: 'ARB' },
-  { name: 'FERRO', role: 'TRACK' },
-  { name: 'TOMI', role: 'EXIT' }
-];
 
 export class PaperTradingStrategyEngine {
   private activePosition: ActivePaperPosition | null = null;
@@ -119,6 +116,8 @@ export class PaperTradingStrategyEngine {
           time: new Date().toTimeString().split(' ')[0],
           trader: pos.traderName,
           role: pos.role,
+          masterTraderName: pos.masterTraderName,
+          masterTraderBadge: pos.masterTraderBadge,
           token: pos.token,
           side: pos.side,
           entryPrice: pos.entryPrice,
@@ -130,10 +129,10 @@ export class PaperTradingStrategyEngine {
           reason,
           holdTimeSeconds: holdDuration,
           desc: isTakeProfitHit
-            ? `${pos.token} · Take Profit filled at $${exitPrice.toFixed(2)} (+${pos.unrealizedPnlPercent}%)`
+            ? `Copied ${pos.masterTraderName} · Take Profit filled at $${exitPrice.toFixed(2)} (+${pos.unrealizedPnlPercent}%)`
             : isStopLossHit
-            ? `${pos.token} · Stop Loss executed at $${exitPrice.toFixed(2)} (${pos.unrealizedPnlPercent}%)`
-            : `${pos.token} · Time-based market exit at $${exitPrice.toFixed(2)}`
+            ? `Copied ${pos.masterTraderName} · Stop Loss executed at $${exitPrice.toFixed(2)} (${pos.unrealizedPnlPercent}%)`
+            : `Copied ${pos.masterTraderName} · Time exit at $${exitPrice.toFixed(2)}`
         };
 
         this.lastTradeClosedAt = now;
@@ -190,18 +189,18 @@ export class PaperTradingStrategyEngine {
       // Signal 1: Orderbook Buyer Pressure & Price Breakout
       if (imbalance > 0.08 && priceDelta >= 0) {
         shouldLong = true;
-        reason = `Orderbook Bid Surge (+${Math.round(imbalance * 100)}%) · Upward Momentum`;
+        reason = `Orderbook Bid Surge (+${Math.round(imbalance * 100)}%)`;
       } else if (imbalance < -0.08 && priceDelta <= 0) {
         shouldShort = true;
-        reason = `Orderbook Ask Heavy (${Math.round(imbalance * 100)}%) · Downward Pressure`;
+        reason = `Orderbook Ask Heavy (${Math.round(imbalance * 100)}%)`;
       } else if (Math.abs(priceDelta) > (currentPrice * 0.0003)) {
         // Signal 2: Micro Volatility Breakout
         if (priceDelta > 0) {
           shouldLong = true;
-          reason = `Live Momentum Breakout over micro tick`;
+          reason = `Momentum Breakout`;
         } else {
           shouldShort = true;
-          reason = `Micro tick rejection`;
+          reason = `Micro Tick Rejection`;
         }
       }
 
@@ -223,13 +222,17 @@ export class PaperTradingStrategyEngine {
           ? Number((currentPrice * (1 - slPct)).toFixed(4))
           : Number((currentPrice * (1 + slPct)).toFixed(4));
 
-        const trader = TRADERS_ROSTER[this.currentTraderIndex % TRADERS_ROSTER.length];
+        // Mirror Bybit Master Trader
+        const masterTrader = BYBIT_MASTER_TRADERS[this.currentTraderIndex % BYBIT_MASTER_TRADERS.length];
         this.currentTraderIndex++;
 
         this.activePosition = {
           id: `pos_${now}_${Math.random().toString(36).substring(2, 6)}`,
-          traderName: trader.name,
-          role: trader.role,
+          traderName: masterTrader.squadBot,
+          role: masterTrader.name,
+          masterTraderName: masterTrader.name,
+          masterTraderBadge: masterTrader.badge,
+          masterTraderRoi: masterTrader.roi7d,
           token: tokenDisplayMap[sym] || `$${sym}`,
           symbol: sym,
           side,
@@ -242,7 +245,7 @@ export class PaperTradingStrategyEngine {
           unrealizedPnl: 0,
           unrealizedPnlPercent: 0,
           openedAt: now,
-          strategyReason: reason,
+          strategyReason: `Copying ${masterTrader.name} (${masterTrader.badge}) · ${reason}`,
           status: 'OPEN'
         };
 

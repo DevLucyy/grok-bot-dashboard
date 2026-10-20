@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://grok-bot-dashboard.pages.dev/sitemap.xml

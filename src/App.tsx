@@ -27,6 +27,7 @@ export function App() {
           <GrokJevHeader
             balance={engine.balance}
             digitalTime={engine.digitalTime}
+            onResetToFifteen={() => engine.resetToWallet(15.00)}
           />
 
           <div className="flex items-center gap-2 self-end sm:self-center">

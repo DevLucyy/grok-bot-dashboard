@@ -18,18 +18,18 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
   const renderAvatar = (name: string) => {
     switch (name) {
       case 'BAZZ':
-        return <BazzAvatar size={42} />;
+        return <BazzAvatar size={44} isActive={true} />;
       case 'QUILO':
-        return <QuiloAvatar size={42} />;
+        return <QuiloAvatar size={44} isActive={true} />;
       case 'TOMI':
-        return <TomiAvatar size={42} />;
+        return <TomiAvatar size={44} isActive={true} />;
       case 'OKKO':
-        return <OkkoAvatar size={42} />;
+        return <OkkoAvatar size={44} isActive={true} />;
       case 'FERRO':
-        return <FerroAvatar size={42} />;
+        return <FerroAvatar size={44} isActive={true} />;
       case 'LUX':
       default:
-        return <LuxAvatar size={42} />;
+        return <LuxAvatar size={44} isActive={true} />;
     }
   };
 
@@ -56,7 +56,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
       <div className="flex items-center gap-3 p-3 rounded bg-[#0a0d14]/90 border border-yellow-500/20 mb-3">
         <div className="relative">
           {renderAvatar(ticket.traderName)}
-          <span className="absolute -bottom-1 -right-1 text-[8px] font-mono px-1 py-0.2 rounded bg-yellow-400 text-black font-extrabold">
+          <span className="absolute -bottom-1 -right-1 text-[8px] font-mono px-1 py-0.2 rounded bg-yellow-400 text-black font-extrabold shadow-sm">
             {ticket.role}
           </span>
         </div>
@@ -66,7 +66,8 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
             <span className="text-xs font-mono font-bold text-white tracking-wide">
               {ticket.traderName} · {ticket.role}
             </span>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30">
+            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               ACTIVE
             </span>
           </div>
@@ -76,22 +77,22 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
         </div>
       </div>
 
-      {/* Metric Grid */}
+      {/* Metric Grid with Real Micro-Wallet Values */}
       <div className="grid grid-cols-2 gap-2 text-xs font-mono">
         <div className="p-2 rounded bg-black/60 border border-yellow-500/10 flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">ENTRY</span>
-          <span className="text-sm font-bold text-white">{ticket.entry}</span>
+          <span className="text-sm font-bold text-white truncate">{ticket.entry}</span>
         </div>
 
         <div className="p-2 rounded bg-black/60 border border-yellow-500/10 flex flex-col">
           <span className="text-[10px] text-slate-500 uppercase tracking-wider">TARGET / EXIT</span>
-          <span className="text-sm font-bold text-white">{ticket.exit}</span>
+          <span className="text-sm font-bold text-white truncate">{ticket.exit}</span>
         </div>
 
         <div className="p-2 rounded bg-black/60 border border-yellow-500/10 flex flex-col">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">SIZE (% BANK)</span>
+          <span className="text-[10px] text-slate-500 uppercase tracking-wider">SIZE (25% BANK)</span>
           <span className="text-xs font-bold text-slate-200">
-            ${ticket.sizeUsd.toLocaleString()} <span className="text-yellow-400/80">({ticket.sizePercent}%)</span>
+            ${ticket.sizeUsd.toFixed(2)} <span className="text-yellow-400/80">({ticket.sizePercent}%)</span>
           </span>
         </div>
 
@@ -106,8 +107,8 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
       {/* Micro Progress Bar */}
       <div className="mt-3 pt-2 border-t border-yellow-500/10">
         <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-          <span>PIPELINE EXECUTION</span>
-          <span className="text-yellow-400 font-bold">100% ROUTED</span>
+          <span>PIPELINE ROUTING</span>
+          <span className="text-yellow-400 font-bold">100% EXECUTED</span>
         </div>
         <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-yellow-500/20">
           <div className="h-full bg-gradient-to-r from-yellow-400 via-emerald-400 to-cyan-400 w-full animate-pulse" />

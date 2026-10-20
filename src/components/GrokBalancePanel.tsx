@@ -48,16 +48,19 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
 
     const padTop = 22;
     const padBottom = 24;
-    const padLeft = 48;
+    const padLeft = 44;
     const padRight = 16;
     const plotWidth = width - padLeft - padRight;
     const plotHeight = height - padTop - padBottom;
 
-    const minBal = 5800;
-    const maxBal = Math.max(13000, balance * 1.05);
+    // Dynamic scale for realistic micro-wallet ($15 to $35+)
+    const historyBalances = history.map(h => h.balance);
+    const minBal = Math.max(0, Math.min(...historyBalances, tonightStart) * 0.94);
+    const maxBal = Math.max(...historyBalances, balance) * 1.08;
 
     const getY = (val: number) => {
-      return padTop + plotHeight * (1 - (val - minBal) / (maxBal - minBal));
+      const denom = maxBal - minBal || 1;
+      return padTop + plotHeight * (1 - (val - minBal) / denom);
     };
 
     // Y Axis Labels
@@ -65,16 +68,16 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
     const ticks = [
-      { val: maxBal * 0.95, label: `$${Math.round(maxBal * 0.95).toLocaleString()}` },
-      { val: (maxBal + minBal) / 2, label: `$${Math.round((maxBal + minBal) / 2).toLocaleString()}` },
-      { val: minBal * 1.1, label: `$${Math.round(minBal * 1.1).toLocaleString()}` }
+      { val: maxBal * 0.96, label: `$${(maxBal * 0.96).toFixed(2)}` },
+      { val: (maxBal + minBal) / 2, label: `$${((maxBal + minBal) / 2).toFixed(2)}` },
+      { val: minBal * 1.04, label: `$${(minBal * 1.04).toFixed(2)}` }
     ];
 
     ticks.forEach(t => {
       const y = getY(t.val);
       ctx.fillText(t.label, padLeft - 6, y + 3);
       // subtle grid line
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padLeft, y);
@@ -86,14 +89,14 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
     const stepW = plotWidth / (history.length - 1);
     history.forEach((h, i) => {
       const x = padLeft + i * stepW;
-      const vH = Math.min(18, Math.max(4, (h.balance % 30) + 4));
+      const vH = Math.min(18, Math.max(4, ((h.balance * 10) % 20) + 4));
       ctx.fillStyle = h.isLoss ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.4)';
       ctx.fillRect(x - 2, height - padBottom - vH, 4, vH);
     });
 
-    // Draw Stepped Line
+    // Draw Stepped Line (Authentic Cyber Terminal Stepped Curve)
     ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
 
     history.forEach((h, i) => {
@@ -113,7 +116,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
     const lastX = padLeft + (history.length - 1) * stepW;
     const lastY = getY(history[history.length - 1].balance);
     ctx.setLineDash([3, 4]);
-    ctx.strokeStyle = 'rgba(52, 211, 153, 0.5)';
+    ctx.strokeStyle = 'rgba(52, 211, 153, 0.6)';
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(width - padRight, lastY);
@@ -130,7 +133,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
       // Node circle
       ctx.fillStyle = h.isLoss ? '#f43f5e' : '#10b981';
       ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
       ctx.fill();
 
       // Flag Pill
@@ -140,7 +143,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
       const pillH = 14;
       const pillY = y - 18;
 
-      ctx.fillStyle = h.isLoss ? 'rgba(136, 19, 55, 0.9)' : 'rgba(6, 78, 59, 0.9)';
+      ctx.fillStyle = h.isLoss ? 'rgba(136, 19, 55, 0.95)' : 'rgba(6, 78, 59, 0.95)';
       ctx.strokeStyle = h.isLoss ? '#f43f5e' : '#10b981';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -151,7 +154,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
       ctx.fillStyle = h.isLoss ? '#fecdd3' : '#a7f3d0';
       ctx.fillText(h.flag, x, pillY + 10);
     });
-  }, [history, balance]);
+  }, [history, balance, tonightStart]);
 
   return (
     <div className="jev-panel p-3.5 flex flex-col justify-between h-full">
@@ -160,19 +163,23 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
       {/* Top Header */}
       <div className="flex items-center justify-between border-b border-yellow-400/20 pb-2 text-[10px] font-mono">
         <div>
-          <span className="font-black text-yellow-400 tracking-wider">BALANCE · DAY 5 · ONE BANK</span>
+          <span className="font-black text-yellow-400 tracking-wider">
+            BALANCE · DAY 1 · REAL $15 WALLET
+          </span>
           <div className="text-[9px] text-slate-400 mt-0.5">
-            d1 $250 · d2 $943 · d3 $3,288 · d4 $6,105
+            START $15.00 · SIZING 25% ($3.75) · 0 DEMOS
           </div>
         </div>
         <div className="text-right">
           <span className="font-bold text-white">{wins}W {losses}L</span>
           <span className="text-slate-500 mx-1">·</span>
-          <span className="font-bold text-emerald-400">TONIGHT +{tonightGainPercent.toFixed(2)}%</span>
+          <span className="font-bold text-emerald-400">
+            TONIGHT +{tonightGainPercent.toFixed(2)}%
+          </span>
         </div>
       </div>
 
-      {/* Main Body: Left Chart + Right Huge Balance */}
+      {/* Main Body: Left Chart + Right Real Balance */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 my-2 items-center flex-1">
         {/* Left: Stepped Canvas Chart */}
         <div className="sm:col-span-7 h-[115px] relative">
@@ -181,14 +188,15 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
 
         {/* Right: Big Balance Display */}
         <div className="sm:col-span-5 flex flex-col justify-center text-right pr-2">
-          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold">
-            BALANCE
+          <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest font-semibold flex items-center justify-end gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            LIVE WALLET
           </div>
           <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-400 tracking-tight drop-shadow-[0_0_12px_rgba(16,185,129,0.35)]">
             ${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-            from ${tonightStart.toLocaleString('en-US', { minimumFractionDigits: 2 })} tonight
+            +${(balance - tonightStart).toFixed(2)} net profit tonight
           </div>
         </div>
       </div>

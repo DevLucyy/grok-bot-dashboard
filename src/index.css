@@ -59,18 +59,130 @@
   );
 }
 
+/* Conveyor Track Animation */
 @keyframes conveyorRoll {
   0% { background-position: 0 0; }
-  100% { background-position: 40px 0; }
+  100% { background-position: 48px 0; }
 }
 
 .conveyor-track {
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.08) 0,
-    rgba(255, 255, 255, 0.08) 4px,
-    transparent 4px,
-    transparent 12px
+    rgba(234, 179, 8, 0.25) 0,
+    rgba(234, 179, 8, 0.25) 6px,
+    transparent 6px,
+    transparent 16px
   );
-  animation: conveyorRoll 2s linear infinite;
+  background-size: 48px 100%;
+  animation: conveyorRoll 1.4s linear infinite;
+}
+
+/* Bot Alive Idle Animations */
+@keyframes botBob {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3.5px) rotate(0.8deg);
+  }
+}
+
+@keyframes botBlink {
+  0%, 88%, 100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  92% {
+    transform: scaleY(0.1);
+    opacity: 0.3;
+  }
+}
+
+@keyframes eyeDart {
+  0%, 35%, 100% {
+    transform: translateX(0);
+  }
+  45%, 65% {
+    transform: translateX(2.5px);
+  }
+  75%, 90% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes scanLaserH {
+  0% {
+    left: 0%;
+    opacity: 0.8;
+  }
+  50% {
+    left: 95%;
+    opacity: 0.4;
+  }
+  100% {
+    left: 0%;
+    opacity: 0.8;
+  }
+}
+
+@keyframes radarRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pipelinePulse {
+  0% { stroke-dashoffset: 40; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes crateDrop {
+  0% {
+    transform: translateY(-5px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(28px) scale(0.6) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes goldPingFloat {
+  0% {
+    transform: translateY(0px) scale(0.9);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-24px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.bot-bob {
+  animation: botBob 3.2s ease-in-out infinite;
+}
+
+.bot-bob-fast {
+  animation: botBob 2s ease-in-out infinite;
+}
+
+.bot-blink {
+  transform-origin: center;
+  animation: botBlink 4.5s ease-in-out infinite;
+}
+
+.bot-dart {
+  animation: eyeDart 5s ease-in-out infinite;
+}
+
+.radar-spinner {
+  transform-origin: center;
+  animation: radarRotate 4s linear infinite;
+}
+
+.pipeline-laser {
+  stroke-dasharray: 8 4;
+  animation: pipelinePulse 1s linear infinite;
 }

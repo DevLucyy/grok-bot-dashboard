@@ -18,24 +18,24 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
   const getAvatar = (name: string) => {
     switch (name) {
       case 'BAZZ':
-        return <BazzAvatar size={28} />;
+        return <BazzAvatar size={30} />;
       case 'QUILO':
-        return <QuiloAvatar size={28} />;
+        return <QuiloAvatar size={30} />;
       case 'TOMI':
-        return <TomiAvatar size={28} />;
+        return <TomiAvatar size={30} />;
       case 'OKKO':
-        return <OkkoAvatar size={28} />;
+        return <OkkoAvatar size={30} />;
       case 'FERRO':
-        return <FerroAvatar size={28} />;
+        return <FerroAvatar size={30} />;
       case 'LUX':
       default:
-        return <LuxAvatar size={28} />;
+        return <LuxAvatar size={30} />;
     }
   };
 
   // Sort traders by PnL descending
   const sorted = [...traders].sort((a, b) => b.pnl - a.pnl);
-  const maxPnl = Math.max(...sorted.map(t => Math.max(1, t.pnl)));
+  const maxPnl = Math.max(0.1, ...sorted.map(t => Math.max(0.1, t.pnl)));
 
   return (
     <div className="jev-panel p-4 relative flex flex-col justify-between">
@@ -50,7 +50,7 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
           </h3>
         </div>
         <span className="text-[10px] font-mono text-slate-400">
-          6 TRADERS · PNL RANK
+          6 TRADERS · REAL PNL
         </span>
       </div>
 
@@ -59,7 +59,7 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
         {sorted.map((trader, idx) => {
           const isTop = idx === 0;
           const isOnNotice = trader.status === 'ON NOTICE' || trader.consecutiveLosses >= 2;
-          const barWidth = trader.pnl > 0 ? Math.min(100, (trader.pnl / maxPnl) * 100) : 10;
+          const barWidth = trader.pnl > 0 ? Math.min(100, Math.max(8, (trader.pnl / maxPnl) * 100)) : 6;
 
           return (
             <div
@@ -106,14 +106,14 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
                     }`}
                   >
                     {trader.pnl >= 0
-                      ? `+$${trader.pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : `-$${Math.abs(trader.pnl).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      ? `+$${trader.pnl.toFixed(2)}`
+                      : `-$${Math.abs(trader.pnl).toFixed(2)}`}
                   </span>
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full h-1 bg-black rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-white/5">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{

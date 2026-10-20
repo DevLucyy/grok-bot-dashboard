@@ -57,7 +57,12 @@ export function loadBybitCredentials(): BybitCredentials {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CREDS);
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return {
+        apiKey: (parsed.apiKey || '').trim().replace(/[\r\n\t\s]/g, ''),
+        apiSecret: (parsed.apiSecret || '').trim().replace(/[\r\n\t\s]/g, ''),
+        isConfigured: Boolean(parsed.apiKey && parsed.apiSecret)
+      };
     }
   } catch {
     // fallback
@@ -66,10 +71,12 @@ export function loadBybitCredentials(): BybitCredentials {
 }
 
 export function saveBybitCredentials(creds: { apiKey: string; apiSecret: string }): BybitCredentials {
+  const cleanKey = (creds.apiKey || '').trim().replace(/[\r\n\t\s]/g, '');
+  const cleanSecret = (creds.apiSecret || '').trim().replace(/[\r\n\t\s]/g, '');
   const updated: BybitCredentials = {
-    apiKey: creds.apiKey.trim(),
-    apiSecret: creds.apiSecret.trim(),
-    isConfigured: Boolean(creds.apiKey.trim() && creds.apiSecret.trim())
+    apiKey: cleanKey,
+    apiSecret: cleanSecret,
+    isConfigured: Boolean(cleanKey && cleanSecret)
   };
   try {
     localStorage.setItem(STORAGE_KEY_CREDS, JSON.stringify(updated));
@@ -94,7 +101,7 @@ export async function generateBybitSignature(secret: string, message: string): P
   const enc = new TextEncoder();
   const key = await window.crypto.subtle.importKey(
     'raw',
-    enc.encode(secret),
+    enc.encode(secret.trim()),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -126,25 +133,133 @@ export interface BybitWalletCheckResult {
 
 const BYBIT_TESTNET_BASE = 'https://api-testnet.bybit.com';
 
+interface BybitParsedResponse<T = any> {
+  ok: boolean;
+  status: number;
+  data?: T;
+  error?: string;
+}
+
+/**
+ * Bulletproof parser for Bybit V5 REST responses.
+ * Avoids uncaught "Failed to execute 'json' on 'Response'" when Bybit sends HTTP 401 with 0 bytes.
+ */
+async function parseBybitResponse<T = any>(res: Response): Promise<BybitParsedResponse<T>> {
+  let text = '';
+  try {
+    text = await res.text();
+  } catch (err: any) {
+    return {
+      ok: false,
+      status: res.status,
+      error: `Network error reading response: ${err?.message || 'unknown'}`
+    };
+  }
+
+  // Bybit sends 0 bytes on HTTP 401/403 auth failures
+  if (!text || text.trim().length === 0) {
+    if (res.status === 401) {
+      return {
+        ok: false,
+        status: 401,
+        error: 'HTTP 401 Unauthorized: Invalid API Key or Secret. If you created this key on mainnet (bybit.com), please create it on testnet.bybit.com instead.'
+      };
+    }
+    if (res.status === 403) {
+      return {
+        ok: false,
+        status: 403,
+        error: 'HTTP 403 Forbidden: Request blocked by Bybit gateway (check IP whitelist or permissions).'
+      };
+    }
+    return {
+      ok: false,
+      status: res.status,
+      error: `Bybit returned HTTP ${res.status} with empty response body.`
+    };
+  }
+
+  try {
+    const json = JSON.parse(text);
+    if (json.retCode !== undefined && json.retCode !== 0) {
+      let friendly = json.retMsg || `Bybit Error Code ${json.retCode}`;
+      if (json.retCode === 10003) {
+        friendly = 'Invalid API Key: Key does not exist on Bybit Testnet (make sure it was created on testnet.bybit.com).';
+      } else if (json.retCode === 10004) {
+        friendly = 'Invalid Signature: Secret mismatch or system clock out of sync.';
+      } else if (json.retCode === 10005) {
+        friendly = 'Permission Denied: Tick "Orders" & "Positions" under Unified/Contract in Bybit API settings.';
+      } else if (json.retCode === 10002) {
+        friendly = 'Request expired: Timestamp out of sync with Bybit server.';
+      }
+      return {
+        ok: false,
+        status: res.status,
+        data: json,
+        error: friendly
+      };
+    }
+    return {
+      ok: true,
+      status: res.status,
+      data: json
+    };
+  } catch {
+    return {
+      ok: false,
+      status: res.status,
+      error: `Invalid response format from Bybit (HTTP ${res.status})`
+    };
+  }
+}
+
+// Clock synchronization with Bybit server time
+let serverTimeOffsetMs = 0;
+let lastServerSyncTime = 0;
+
+export async function getBybitServerTimestamp(): Promise<string> {
+  const now = Date.now();
+  if (lastServerSyncTime === 0 || now - lastServerSyncTime > 120000) {
+    try {
+      const res = await fetch(`${BYBIT_TESTNET_BASE}/v5/market/time`);
+      const parsed = await parseBybitResponse<{ time?: number }>(res);
+      if (parsed.ok && parsed.data?.time) {
+        const sTime = Number(parsed.data.time);
+        if (!isNaN(sTime) && sTime > 0) {
+          serverTimeOffsetMs = sTime - Date.now();
+          lastServerSyncTime = Date.now();
+        }
+      }
+    } catch {
+      // fallback to local clock
+    }
+  }
+  return (Date.now() + serverTimeOffsetMs).toString();
+}
+
 /**
  * Check connection and retrieve real Bybit Testnet wallet balance
  */
 export async function checkBybitTestnetWallet(creds: BybitCredentials): Promise<BybitWalletCheckResult> {
-  if (!creds.apiKey || !creds.apiSecret) {
+  const cleanKey = (creds.apiKey || '').trim().replace(/[\r\n\t\s]/g, '');
+  const cleanSecret = (creds.apiSecret || '').trim().replace(/[\r\n\t\s]/g, '');
+
+  if (!cleanKey || !cleanSecret) {
     return { ok: false, error: 'API Key or Secret missing' };
   }
 
-  const timestamp = Date.now().toString();
-  const recvWindow = '5000';
+  const sanitizedCreds = { ...creds, apiKey: cleanKey, apiSecret: cleanSecret };
+  const timestamp = await getBybitServerTimestamp();
+  const recvWindow = '20000'; // 20s window eliminates clock-drift errors
   const queryString = 'accountType=UNIFIED';
-  const preSignString = timestamp + creds.apiKey + recvWindow + queryString;
+  const preSignString = timestamp + cleanKey + recvWindow + queryString;
 
   try {
-    const signature = await generateBybitSignature(creds.apiSecret, preSignString);
+    const signature = await generateBybitSignature(cleanSecret, preSignString);
     const res = await fetch(`${BYBIT_TESTNET_BASE}/v5/account/wallet-balance?${queryString}`, {
       method: 'GET',
       headers: {
-        'X-BAPI-API-KEY': creds.apiKey,
+        'X-BAPI-API-KEY': cleanKey,
         'X-BAPI-TIMESTAMP': timestamp,
         'X-BAPI-RECV-WINDOW': recvWindow,
         'X-BAPI-SIGN': signature,
@@ -152,12 +267,17 @@ export async function checkBybitTestnetWallet(creds: BybitCredentials): Promise<
       }
     });
 
-    const data = await res.json();
-    if (data.retCode !== 0) {
-      return await checkBybitContractWallet(creds);
+    const parsed = await parseBybitResponse(res);
+    if (!parsed.ok) {
+      // If UNIFIED fails, attempt check on legacy CONTRACT account
+      const contractRes = await checkBybitContractWallet(sanitizedCreds);
+      if (contractRes.ok) {
+        return contractRes;
+      }
+      return { ok: false, error: parsed.error || contractRes.error };
     }
 
-    const list = data.result?.list?.[0];
+    const list = parsed.data?.result?.list?.[0];
     const totalEquity = list ? parseFloat(list.totalEquity || '0') : 0;
     const availableBalance = list ? parseFloat(list.totalAvailableBalance || '0') : 0;
     const coins = list?.coin || [];
@@ -175,8 +295,8 @@ export async function checkBybitTestnetWallet(creds: BybitCredentials): Promise<
 }
 
 async function checkBybitContractWallet(creds: BybitCredentials): Promise<BybitWalletCheckResult> {
-  const timestamp = Date.now().toString();
-  const recvWindow = '5000';
+  const timestamp = await getBybitServerTimestamp();
+  const recvWindow = '20000';
   const queryString = 'accountType=CONTRACT';
   const preSignString = timestamp + creds.apiKey + recvWindow + queryString;
 
@@ -193,12 +313,12 @@ async function checkBybitContractWallet(creds: BybitCredentials): Promise<BybitW
       }
     });
 
-    const data = await res.json();
-    if (data.retCode !== 0) {
-      return { ok: false, error: data.retMsg || `Bybit Error Code ${data.retCode}` };
+    const parsed = await parseBybitResponse(res);
+    if (!parsed.ok) {
+      return { ok: false, error: parsed.error || `Bybit Contract Wallet Error` };
     }
 
-    const list = data.result?.list?.[0];
+    const list = parsed.data?.result?.list?.[0];
     const totalEquity = list ? parseFloat(list.totalEquity || '0') : 0;
     const availableBalance = list ? parseFloat(list.totalAvailableBalance || '0') : 0;
 
@@ -228,12 +348,15 @@ export async function placeBybitTestnetOrder(
     reduceOnly?: boolean;
   }
 ): Promise<BybitOrderResult> {
-  if (!creds.apiKey || !creds.apiSecret) {
+  const cleanKey = (creds.apiKey || '').trim().replace(/[\r\n\t\s]/g, '');
+  const cleanSecret = (creds.apiSecret || '').trim().replace(/[\r\n\t\s]/g, '');
+
+  if (!cleanKey || !cleanSecret) {
     return { ok: false, error: 'API credentials not configured' };
   }
 
-  const timestamp = Date.now().toString();
-  const recvWindow = '5000';
+  const timestamp = await getBybitServerTimestamp();
+  const recvWindow = '20000';
 
   const bodyObj: any = {
     category: 'linear',
@@ -250,14 +373,14 @@ export async function placeBybitTestnetOrder(
   }
 
   const bodyJson = JSON.stringify(bodyObj);
-  const preSignString = timestamp + creds.apiKey + recvWindow + bodyJson;
+  const preSignString = timestamp + cleanKey + recvWindow + bodyJson;
 
   try {
-    const signature = await generateBybitSignature(creds.apiSecret, preSignString);
+    const signature = await generateBybitSignature(cleanSecret, preSignString);
     const res = await fetch(`${BYBIT_TESTNET_BASE}/v5/order/create`, {
       method: 'POST',
       headers: {
-        'X-BAPI-API-KEY': creds.apiKey,
+        'X-BAPI-API-KEY': cleanKey,
         'X-BAPI-TIMESTAMP': timestamp,
         'X-BAPI-RECV-WINDOW': recvWindow,
         'X-BAPI-SIGN': signature,
@@ -266,15 +389,15 @@ export async function placeBybitTestnetOrder(
       body: bodyJson
     });
 
-    const data = await res.json();
-    if (data.retCode !== 0) {
-      return { ok: false, error: data.retMsg || `Bybit Error ${data.retCode}` };
+    const parsed = await parseBybitResponse(res);
+    if (!parsed.ok) {
+      return { ok: false, error: parsed.error || `Failed to execute order on Bybit Testnet` };
     }
 
     return {
       ok: true,
-      orderId: data.result?.orderId,
-      orderLinkId: data.result?.orderLinkId,
+      orderId: parsed.data?.result?.orderId,
+      orderLinkId: parsed.data?.result?.orderLinkId,
       symbol: params.symbol,
       side: params.side,
       qty: params.qty

@@ -7,7 +7,7 @@ import {
   checkBybitTestnetWallet,
   BybitWalletCheckResult,
 } from '../engine/bybitClient';
-import { X, Shield, Activity, Radio, Key, Check, Trash2, ExternalLink, RefreshCw } from 'lucide-react';
+import { X, Shield, Activity, Radio, Key, Check, Trash2, ExternalLink, RefreshCw, HelpCircle, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 
 interface BybitTestnetModalProps {
   isOpen: boolean;
@@ -35,6 +35,7 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [walletInfo, setWalletInfo] = useState<BybitWalletCheckResult | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (credentials.apiKey && credentials.apiSecret) {
@@ -49,8 +50,8 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
     try {
       const res = await checkBybitTestnetWallet(credsToVerify);
       setWalletInfo(res);
-    } catch {
-      setWalletInfo({ ok: false, error: 'Connection check timed out' });
+    } catch (err: any) {
+      setWalletInfo({ ok: false, error: err?.message || 'Connection check failed' });
     } finally {
       setIsVerifying(false);
     }
@@ -79,7 +80,7 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-[#090d16] border-2 border-yellow-400 rounded-2xl p-6 shadow-[0_0_50px_rgba(234,179,8,0.3)] overflow-hidden font-mono">
+      <div className="relative w-full max-w-2xl bg-[#090d16] border-2 border-yellow-400 rounded-2xl p-6 shadow-[0_0_50px_rgba(234,179,8,0.3)] overflow-hidden font-mono max-h-[90vh] overflow-y-auto">
         {/* Glow accents */}
         <div className="absolute -top-20 -left-20 w-48 h-48 bg-yellow-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -146,37 +147,59 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
           </div>
         </div>
 
-        {/* Live Testnet Wallet Balance Display */}
+        {/* Live Testnet Wallet Balance / Status Display */}
         {credentials.isConfigured && (
-          <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-950/40 to-emerald-950/40 border border-yellow-500/40 my-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <div>
-                <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
-                  BYBIT TESTNET PAPER WALLET
-                </div>
-                <div className="text-base font-extrabold text-emerald-400">
-                  {walletInfo?.ok ? (
-                    `$${walletInfo.totalEquity?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
-                  ) : walletInfo?.error ? (
-                    <span className="text-rose-400 text-xs">{walletInfo.error}</span>
-                  ) : isVerifying ? (
-                    <span className="text-yellow-400 text-xs">Querying Bybit V5 API...</span>
-                  ) : (
-                    'Ready to Query'
-                  )}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-yellow-950/40 to-emerald-950/40 border border-yellow-500/40 my-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${walletInfo?.ok ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+                    <span>BYBIT TESTNET PAPER WALLET</span>
+                    {walletInfo?.accountType && (
+                      <span className="px-1.5 py-0.2 rounded text-[8px] bg-slate-800 text-yellow-400 border border-slate-700">
+                        {walletInfo.accountType}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-base font-extrabold text-emerald-400 mt-0.5">
+                    {walletInfo?.ok ? (
+                      `$${walletInfo.totalEquity?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`
+                    ) : isVerifying ? (
+                      <span className="text-yellow-400 text-xs flex items-center gap-1.5">
+                        <RefreshCw className="w-3 h-3 animate-spin" /> Querying Bybit V5 API & Syncing Time...
+                      </span>
+                    ) : walletInfo?.error ? (
+                      <span className="text-rose-400 text-xs font-medium">Connection Check Failed</span>
+                    ) : (
+                      'Ready to Query'
+                    )}
+                  </div>
                 </div>
               </div>
+
+              <button
+                onClick={() => handleVerify(credentials)}
+                disabled={isVerifying}
+                className="px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black border border-yellow-500/30 text-yellow-400 text-[10px] font-bold flex items-center gap-1.5 transition-all"
+              >
+                <RefreshCw className={`w-3 h-3 ${isVerifying ? 'animate-spin' : ''}`} />
+                Verify Balance
+              </button>
             </div>
 
-            <button
-              onClick={() => handleVerify(credentials)}
-              disabled={isVerifying}
-              className="px-3 py-1.5 rounded-lg bg-black/60 hover:bg-black border border-yellow-500/30 text-yellow-400 text-[10px] font-bold flex items-center gap-1.5 transition-all"
-            >
-              <RefreshCw className={`w-3 h-3 ${isVerifying ? 'animate-spin' : ''}`} />
-              Verify Balance
-            </button>
+            {/* Error Message Details Banner */}
+            {walletInfo && !walletInfo.ok && walletInfo.error && (
+              <div className="mt-2.5 p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/40 text-[11px] text-rose-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="font-bold text-rose-200">{walletInfo.error}</div>
+                  <p className="text-[10px] text-rose-300/80 leading-relaxed">
+                    Tip: Make sure you created this key on <strong className="text-yellow-300">testnet.bybit.com</strong> (not mainnet bybit.com), selected <strong>Read-Write</strong> permissions, and set <strong>No IP restriction</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -209,15 +232,43 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
               <Key className="w-3.5 h-3.5 text-yellow-400" />
               <span>Testnet API Key & Secret</span>
             </div>
-            <a
-              href="https://testnet.bybit.com/app/user/api-management"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
-            >
-              Bybit Testnet API Page <ExternalLink className="w-2.5 h-2.5" />
-            </a>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowGuide(!showGuide)}
+                className="text-[10px] text-yellow-400 hover:text-yellow-300 flex items-center gap-1"
+              >
+                <HelpCircle className="w-3 h-3" />
+                Permissions Guide
+                {showGuide ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              <a
+                href="https://testnet.bybit.com/app/user/api-management"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+              >
+                Bybit Testnet API Page <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
           </div>
+
+          {/* Quick Setup / Checklist Accordion */}
+          {showGuide && (
+            <div className="mb-3 p-3 rounded-lg bg-yellow-950/20 border border-yellow-500/30 text-[11px] text-slate-300 space-y-2">
+              <div className="font-bold text-yellow-400 flex items-center gap-1">
+                <span>📋 Checklist for Bybit Testnet Key:</span>
+              </div>
+              <ul className="list-disc pl-4 space-y-1 text-[10px] text-slate-300">
+                <li><strong className="text-white">Domain:</strong> Must be created on <code className="text-yellow-300 bg-black/60 px-1 py-0.5 rounded">testnet.bybit.com</code> (NOT mainnet bybit.com).</li>
+                <li><strong className="text-white">API Key Type:</strong> Choose <strong>"System-generated API Keys"</strong>.</li>
+                <li><strong className="text-white">Permissions:</strong> Choose <strong>"Read-Write"</strong>.</li>
+                <li><strong className="text-white">Unified Trading / Contract:</strong> Tick <strong>"Orders"</strong> and <strong>"Positions"</strong>.</li>
+                <li><strong className="text-white">Account:</strong> Tick <strong>"Read"</strong> (Wallet / Assets).</li>
+                <li><strong className="text-white">IP Restriction:</strong> Choose <strong>"No IP restriction"</strong> so your browser can connect directly.</li>
+              </ul>
+            </div>
+          )}
 
           <form onSubmit={handleSave} className="flex flex-col gap-2.5">
             <div>
@@ -229,7 +280,7 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="Paste Bybit Testnet API Key"
-                className="w-full px-3 py-2 rounded-lg bg-[#0b0e17] border border-slate-800 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                className="w-full px-3 py-2 rounded-lg bg-[#0b0e17] border border-slate-800 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors font-mono"
               />
             </div>
 
@@ -242,7 +293,7 @@ export const BybitTestnetModal: React.FC<BybitTestnetModalProps> = ({
                 value={apiSecret}
                 onChange={(e) => setApiSecret(e.target.value)}
                 placeholder="Paste Bybit Testnet API Secret"
-                className="w-full px-3 py-2 rounded-lg bg-[#0b0e17] border border-slate-800 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                className="w-full px-3 py-2 rounded-lg bg-[#0b0e17] border border-slate-800 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors font-mono"
               />
             </div>
 

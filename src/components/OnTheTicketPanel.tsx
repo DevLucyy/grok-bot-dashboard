@@ -12,24 +12,25 @@ import {
 
 interface Props {
   ticket: TicketState;
+  onInspectBot?: (name: string) => void;
 }
 
-export const OnTheTicketPanel: React.FC<Props> = ({ ticket }) => {
+export const OnTheTicketPanel: React.FC<Props> = ({ ticket, onInspectBot }) => {
   const renderAvatar = (name: string) => {
     switch (name) {
       case 'BAZZ':
-        return <BazzAvatar size={44} isActive={true} />;
+        return <BazzAvatar size={44} isActive={true} onClick={() => onInspectBot?.(name)} />;
       case 'QUILO':
-        return <QuiloAvatar size={44} isActive={true} />;
+        return <QuiloAvatar size={44} isActive={true} onClick={() => onInspectBot?.(name)} />;
       case 'TOMI':
-        return <TomiAvatar size={44} isActive={true} />;
+        return <TomiAvatar size={44} isActive={true} onClick={() => onInspectBot?.(name)} />;
       case 'OKKO':
-        return <OkkoAvatar size={44} isActive={true} />;
+        return <OkkoAvatar size={44} isActive={true} onClick={() => onInspectBot?.(name)} />;
       case 'FERRO':
-        return <FerroAvatar size={44} isActive={true} />;
+        return <FerroAvatar size={44} isActive={true} onClick={() => onInspectBot?.(name)} />;
       case 'LUX':
       default:
-        return <LuxAvatar size={44} isActive={true} />;
+        return <LuxAvatar size={44} isActive={true} onClick={() => onInspectBot?.(name)} />;
     }
   };
 

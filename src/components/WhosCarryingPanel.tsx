@@ -13,24 +13,25 @@ import {
 
 interface Props {
   traders: TraderStats[];
+  onInspectBot?: (name: string) => void;
 }
 
-export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
+export const WhosCarryingPanel: React.FC<Props> = ({ traders, onInspectBot }) => {
   const getAvatar = (name: string) => {
     switch (name) {
       case 'BAZZ':
-        return <BazzAvatar size={30} />;
+        return <BazzAvatar size={30} onClick={() => onInspectBot?.(name)} />;
       case 'QUILO':
-        return <QuiloAvatar size={30} />;
+        return <QuiloAvatar size={30} onClick={() => onInspectBot?.(name)} />;
       case 'TOMI':
-        return <TomiAvatar size={30} />;
+        return <TomiAvatar size={30} onClick={() => onInspectBot?.(name)} />;
       case 'OKKO':
-        return <OkkoAvatar size={30} />;
+        return <OkkoAvatar size={30} onClick={() => onInspectBot?.(name)} />;
       case 'FERRO':
-        return <FerroAvatar size={30} />;
+        return <FerroAvatar size={30} onClick={() => onInspectBot?.(name)} />;
       case 'LUX':
       default:
-        return <LuxAvatar size={30} />;
+        return <LuxAvatar size={30} onClick={() => onInspectBot?.(name)} />;
     }
   };
 
@@ -66,13 +67,15 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
           return (
             <div
               key={trader.id}
-              className={`p-2 rounded bg-[#0a0d14]/90 border transition-all ${
+              onClick={() => onInspectBot?.(trader.name)}
+              className={`p-2 rounded bg-[#0a0d14]/90 border transition-all cursor-pointer hover:scale-101 ${
                 isTop
                   ? 'border-yellow-500/40 bg-yellow-950/15 shadow-[0_0_10px_rgba(234,179,8,0.1)]'
                   : isOnNotice
                   ? 'border-rose-500/40 bg-rose-950/10'
                   : 'border-yellow-500/10 hover:border-yellow-500/25'
               }`}
+              title={`Click to inspect ${trader.name} / ${master?.name}`}
             >
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
@@ -100,7 +103,7 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
                     </div>
                     {master && (
                       <div className="text-[8px] text-slate-400 mt-0.5">
-                        {master.bybitRank} · {master.followers} followers
+                        {master.bybitRank} · {master.followers.toLocaleString()} followers
                       </div>
                     )}
                   </div>
@@ -141,3 +144,4 @@ export const WhosCarryingPanel: React.FC<Props> = ({ traders }) => {
     </div>
   );
 };
+export default WhosCarryingPanel;

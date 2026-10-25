@@ -64,6 +64,10 @@ export interface TicketState {
   isWin: boolean;
   bybitOrderId?: string;
   strategyReason?: string;
+  stressedStopDistance?: number;
+  riskRewardRatio?: number;
+  monteCarloWinOdds?: number;
+  expectedValueUsd?: number;
 }
 
 export interface FunnelState {
@@ -258,7 +262,11 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
               unrealizedPnlPercent: ap.unrealizedPnlPercent,
               isOpen: true,
               isWin: ap.unrealizedPnl >= 0,
-              strategyReason: ap.strategyReason
+              strategyReason: ap.strategyReason,
+              stressedStopDistance: ap.stressedStopDistance,
+              riskRewardRatio: ap.riskRewardRatio || 1.67,
+              monteCarloWinOdds: ap.monteCarloWinOdds,
+              expectedValueUsd: ap.expectedValueUsd
             });
           }
           setCloudExecutions(s.cronExecutions || 1);
@@ -485,7 +493,11 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
         unrealizedPnlPercent: activePos.unrealizedPnlPercent,
         isOpen: true,
         isWin: activePos.unrealizedPnl >= 0,
-        strategyReason: activePos.strategyReason
+        strategyReason: activePos.strategyReason,
+        stressedStopDistance: activePos.stressedStopDistance,
+        riskRewardRatio: activePos.riskRewardRatio || 1.67,
+        monteCarloWinOdds: activePos.monteCarloWinOdds,
+        expectedValueUsd: activePos.expectedValueUsd
       });
     }
   }, [bybitFeed, balance]);

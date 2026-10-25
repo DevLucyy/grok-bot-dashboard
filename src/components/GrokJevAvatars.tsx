@@ -215,18 +215,18 @@ export const JevAvatar: React.FC<{ size?: number; className?: string }> = ({ siz
   </div>
 );
 
-// GROK BOT CENTRAL CORE: Spinning hazard rim + blinking white slit eyes
-export const GrokCoreDisc: React.FC<{ size?: number; className?: string }> = ({ size = 80, className = '' }) => (
+// DEV'S QUANT CORE: Spinning golden matrix rim + cybernetic quant indicator
+export const DevQuantCoreDisc: React.FC<{ size?: number; className?: string }> = ({ size = 80, className = '' }) => (
   <div className="relative inline-flex items-center justify-center">
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
       <defs>
-        <radialGradient id="grokRim" cx="50%" cy="50%" r="50%">
-          <stop offset="70%" stopColor="#0f172a" />
-          <stop offset="90%" stopColor="#1e293b" />
-          <stop offset="100%" stopColor="#eab308" />
+        <radialGradient id="quantRim" cx="50%" cy="50%" r="50%">
+          <stop offset="65%" stopColor="#0a0f1d" />
+          <stop offset="85%" stopColor="#0f172a" />
+          <stop offset="100%" stopColor="#f59e0b" />
         </radialGradient>
-        <filter id="grokGlow">
-          <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#eab308" floodOpacity="0.6" />
+        <filter id="quantGlow">
+          <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#f59e0b" floodOpacity="0.7" />
         </filter>
       </defs>
       {/* Outer spinning dashed ring */}
@@ -234,31 +234,35 @@ export const GrokCoreDisc: React.FC<{ size?: number; className?: string }> = ({ 
         cx="50"
         cy="50"
         r="47"
-        stroke="#eab308"
+        stroke="#f59e0b"
         strokeWidth="2"
         strokeDasharray="6 4"
-        className="animate-[spin_10s_linear_infinite]"
+        className="animate-[spin_12s_linear_infinite]"
       />
       {/* Pulsing radar ring */}
       <circle
         cx="50"
         cy="50"
         r="44"
-        stroke="#facc15"
-        strokeWidth="1"
-        opacity="0.3"
+        stroke="#38bdf8"
+        strokeWidth="1.5"
+        opacity="0.4"
         className="animate-ping"
       />
-      {/* Inner dark body */}
-      <circle cx="50" cy="50" r="40" fill="url(#grokRim)" filter="url(#grokGlow)" stroke="#334155" strokeWidth="2" />
-      {/* Blinking eyes that dart */}
+      {/* Inner dark body with glow */}
+      <circle cx="50" cy="50" r="40" fill="url(#quantRim)" filter="url(#quantGlow)" stroke="#38bdf8" strokeWidth="1.5" />
+      {/* Golden Hexagon & Quant Slits */}
+      <polygon points="50,22 72,35 72,65 50,78 28,65 28,35" stroke="#f59e0b" strokeWidth="1.5" fill="none" opacity="0.6" />
       <g className="bot-dart">
-        <rect x="36" y="40" width="6" height="20" rx="3" fill="#ffffff" className="bot-blink" />
-        <rect x="58" y="40" width="6" height="20" rx="3" fill="#ffffff" className="bot-blink" />
+        <rect x="38" y="44" width="6" height="14" rx="2" fill="#38bdf8" className="bot-blink" />
+        <rect x="56" y="44" width="6" height="14" rx="2" fill="#38bdf8" className="bot-blink" />
       </g>
     </svg>
   </div>
 );
+
+// Backward compatibility alias for GrokCoreDisc
+export const GrokCoreDisc = DevQuantCoreDisc;
 
 // Cyber corner brackets for panels
 export const CyberCornerBrackets: React.FC = () => (

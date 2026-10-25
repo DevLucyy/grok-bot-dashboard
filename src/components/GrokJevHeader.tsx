@@ -26,7 +26,7 @@ export const GrokJevHeader: React.FC<GrokJevHeaderProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-mono flex items-center gap-2">
-              Grok Bot <span className="text-yellow-400 font-bold">×</span> Jev
+              Dev's Quant Desk <span className="text-yellow-400 font-bold">×</span> Bybit
             </h1>
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-[9px] font-mono font-bold text-emerald-400 tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -34,7 +34,7 @@ export const GrokJevHeader: React.FC<GrokJevHeaderProps> = ({
             </span>
           </div>
           <p className="text-[11px] font-mono text-yellow-400 font-semibold tracking-wider uppercase mt-0.5">
-            DAY 1 · ${(balance ?? 0).toFixed(2)} REAL WALLET · JEV PICKS, GROK TRADES (NO DEMOS)
+            DEV'S QUANT CORE · ${(balance ?? 0).toFixed(2)} WALLET · 1.67R ASYMMETRIC SCALPS · ZERO SCRIPTED DEMOS
           </p>
         </div>
       </div>

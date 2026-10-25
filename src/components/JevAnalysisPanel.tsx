@@ -193,7 +193,7 @@ export const JevAnalysisPanel: React.FC<JevAnalysisPanelProps> = ({
       <div className="flex items-center justify-between border-b border-yellow-400/20 pb-2 text-[10px] font-mono">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span className="font-black text-yellow-400 tracking-wider">JEV · ANALYSIS</span>
+          <span className="font-black text-yellow-400 tracking-wider">DEV'S QUANT RADAR · L2 DEPTH</span>
         </div>
         <span className="text-[9px] text-slate-400 font-semibold">{scannedCount.toLocaleString()} scanned</span>
       </div>

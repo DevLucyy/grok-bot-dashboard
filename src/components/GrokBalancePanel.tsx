@@ -200,7 +200,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
       <div className="flex flex-wrap items-center justify-between border-b border-yellow-400/20 pb-2 text-[10px] font-mono gap-2">
         <div className="flex items-center gap-2">
           <span className="font-black text-yellow-400 tracking-wider flex items-center gap-1.5">
-            BALANCE · REAL $15 WALLET
+            DEV'S QUANT EQUITY · $15 WALLET
           </span>
 
           {/* Mode Switcher */}
@@ -215,7 +215,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                REAL RISK (48% Win)
+                QUANT EDGE (Stressed Sizing)
               </button>
               <button
                 type="button"
@@ -226,7 +226,7 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                VIRAL TIKTOK (82% Win)
+                MARTINGALE TRAP (82% Demo)
               </button>
             </div>
           )}

@@ -76,7 +76,7 @@ export function App() {
           </div>
         </div>
 
-        {/* ROW 2: JEV ANALYSIS (8 cols) + [JEV CHECKS & ON THE TICKET] (4 cols) */}
+        {/* ROW 2: DEV'S QUANT RADAR (8 cols) + [QUANT GATES & ON THE TICKET] (4 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div className="lg:col-span-8">
             <JevAnalysisPanel

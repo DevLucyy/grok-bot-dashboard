@@ -65,14 +65,40 @@ export const GrokBalancePanel: React.FC<GrokBalancePanelProps> = ({
 
     ctx.clearRect(0, 0, width, height);
 
-    if (history.length < 2) return;
-
     const padTop = 22;
     const padBottom = 24;
     const padLeft = 44;
     const padRight = 16;
     const plotWidth = width - padLeft - padRight;
     const plotHeight = height - padTop - padBottom;
+
+    if (history.length < 2) {
+      const baselineY = padTop + plotHeight * 0.5;
+      ctx.strokeStyle = 'rgba(234, 179, 8, 0.3)';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, baselineY);
+      ctx.lineTo(width - padRight, baselineY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#eab308';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`$${balance.toFixed(2)}`, padLeft - 6, baselineY + 3);
+
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(width - padRight - 8, baselineY, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('LIVE COMPOUND ACCUMULATOR ACTIVE', width / 2, baselineY - 10);
+      return;
+    }
 
     // Dynamic scale for realistic micro-wallet ($15 baseline, can dip down to $0 or up to $30+)
     const historyBalances = history.map(h => h.balance);

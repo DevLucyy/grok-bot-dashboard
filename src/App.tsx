@@ -44,23 +44,6 @@ export function App() {
     gsap.ticker.add(raf);
     gsap.ticker.lagSmoothing(0);
 
-    // Staggered cyber-entrance animation for dashboard panel rows
-    if (containerRef.current) {
-      const rows = containerRef.current.querySelectorAll('.cyber-enter-row');
-      gsap.fromTo(
-        rows,
-        { opacity: 0, y: 18, filter: 'blur(4px)' },
-        {
-          opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
-          duration: 0.65,
-          stagger: 0.1,
-          ease: 'power3.out',
-        }
-      );
-    }
-
     return () => {
       gsap.ticker.remove(raf);
       lenis.destroy();
@@ -72,14 +55,14 @@ export function App() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-[#070709] text-slate-200 p-2 sm:p-4 md:p-6 font-mono select-none antialiased relative overflow-hidden"
+      className="min-h-screen w-full bg-[#070709] text-slate-200 p-2 sm:p-4 md:p-6 font-mono select-none antialiased relative overflow-x-hidden flex flex-col items-center"
     >
       {/* Cyber Ambient Matrix Background */}
       <div className="fixed inset-0 bg-[linear-gradient(to_right,#eab30807_1px,transparent_1px),linear-gradient(to_bottom,#eab30807_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-      <div className="fixed -top-40 -left-40 w-96 h-96 rounded-full bg-yellow-500/5 blur-[120px] pointer-events-none" />
-      <div className="fixed -bottom-40 -right-40 w-96 h-96 rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
+      <div className="fixed top-0 left-0 w-96 h-96 rounded-full bg-yellow-500/5 blur-[120px] pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+      <div className="fixed bottom-0 right-0 w-96 h-96 rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none translate-x-1/2 translate-y-1/2" />
 
-      <div className="max-w-[1600px] mx-auto flex flex-col gap-4 relative z-10">
+      <div className="w-full max-w-[1800px] flex flex-col gap-4 relative z-10">
         {/* TOP STATUS BAR: BRANDING + DIGITAL CLOCK + BYBIT QUICK LINK */}
         <div className="cyber-enter-row flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-yellow-500/20">
           <GrokJevHeader

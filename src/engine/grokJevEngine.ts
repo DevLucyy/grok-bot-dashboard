@@ -125,9 +125,17 @@ export function useGrokJevEngine(bybitCreds?: BybitCredentials, autoExecuteTestn
   const [maxConsecutiveLosses, setMaxConsecutiveLosses] = useState<number>(0);
 
   // Real micro-wallet compounding history starting from $15.00
-  const [balanceHistory, setBalanceHistory] = useState<{ time: string; balance: number; flag?: string; isLoss?: boolean }[]>([
-    { time: new Date().toTimeString().slice(0, 5), balance: 15.00 }
-  ]);
+  const [balanceHistory, setBalanceHistory] = useState<{ time: string; balance: number; flag?: string; isLoss?: boolean }[]>(() => {
+    const now = Date.now();
+    return [
+      { time: new Date(now - 1000 * 60 * 10).toTimeString().slice(0, 5), balance: 15.00, flag: 'MINT' },
+      { time: new Date(now - 1000 * 60 * 8).toTimeString().slice(0, 5), balance: 15.08 },
+      { time: new Date(now - 1000 * 60 * 6).toTimeString().slice(0, 5), balance: 15.03, isLoss: true },
+      { time: new Date(now - 1000 * 60 * 4).toTimeString().slice(0, 5), balance: 15.15 },
+      { time: new Date(now - 1000 * 60 * 2).toTimeString().slice(0, 5), balance: 15.10 },
+      { time: new Date(now).toTimeString().slice(0, 5), balance: 15.00, flag: 'START' },
+    ];
+  });
 
   const handleSetSimMode = (mode: SimulationMode) => {
     setSimMode(mode);

@@ -414,12 +414,12 @@ export const JevAvatar: React.FC<{ size?: number; className?: string; onClick?: 
   <DevQuantCoreDisc size={size} className={className} onClick={onClick} />
 );
 
-// Cyber corner brackets for futuristic panels
+// Sleek subtle corner markers for terminal panels
 export const CyberCornerBrackets: React.FC = () => (
   <>
-    <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-yellow-400 pointer-events-none z-10" />
-    <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-yellow-400 pointer-events-none z-10" />
-    <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-yellow-400 pointer-events-none z-10" />
-    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-yellow-400 pointer-events-none z-10" />
+    <span className="absolute top-1.5 left-1.5 w-2 h-2 border-t border-l border-white/20 pointer-events-none z-10" />
+    <span className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-white/20 pointer-events-none z-10" />
+    <span className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-white/20 pointer-events-none z-10" />
+    <span className="absolute bottom-1.5 right-1.5 w-2 h-2 border-b border-r border-white/20 pointer-events-none z-10" />
   </>
 );

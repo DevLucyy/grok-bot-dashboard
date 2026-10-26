@@ -2,19 +2,24 @@
 
 @layer base {
   :root {
-    --bg-dark: #070709;
-    --panel-bg: #08090d;
-    --border-yellow: #eab308;
+    --bg-dark: #05060a;
+    --panel-bg: #090b12;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-highlight: rgba(255, 255, 255, 0.16);
     --neon-green: #10b981;
     --neon-rose: #f43f5e;
     --neon-cyan: #06b6d4;
+    --neon-amber: #f59e0b;
+    --neon-violet: #8b5cf6;
   }
 
   body {
     background-color: var(--bg-dark);
     color: #e2e8f0;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
@@ -25,63 +30,78 @@
   }
 }
 
-/* Monospace font settings */
+/* Tabular mono font settings */
 .font-mono-numbers {
   font-family: 'JetBrains Mono', monospace;
   font-feature-settings: 'tnum' on, 'zero' on;
 }
 
-/* Custom cyber scrollbar */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom sleek dark glass scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(9, 11, 16, 0.8);
+  background: rgba(5, 6, 10, 0.9);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(234, 179, 8, 0.35);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(234, 179, 8, 0.7);
+  background: rgba(255, 255, 255, 0.28);
 }
 
-/* Grok Jev Cyber Panel with Yellow Framing */
-.jev-panel {
-  background-color: #08090d;
-  border: 1.5px solid #eab308;
+/* Double-Bezel (Doppelrand) Institutional Terminal Card */
+.terminal-card {
   position: relative;
-  box-shadow: 0 0 15px rgba(234, 179, 8, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  padding: 1px;
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Hazard diagonal stripes */
-.hazard-stripes {
-  background: repeating-linear-gradient(
-    -45deg,
-    #facc15,
-    #facc15 8px,
-    #090b10 8px,
-    #090b10 16px
-  );
+.terminal-card:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 100%);
 }
 
-/* Conveyor Track Animation */
-@keyframes conveyorRoll {
-  0% { background-position: 0 0; }
-  100% { background-position: 48px 0; }
+.terminal-card-inner {
+  background: #090b12;
+  border-radius: calc(1.25rem - 1px);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.07);
+  height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
-.conveyor-track {
-  background-image: repeating-linear-gradient(
-    90deg,
-    rgba(234, 179, 8, 0.25) 0,
-    rgba(234, 179, 8, 0.25) 6px,
-    transparent 6px,
-    transparent 16px
-  );
-  background-size: 48px 100%;
-  animation: conveyorRoll 1.4s linear infinite;
+/* Legacy jev-panel updated to luxury dark glass */
+.jev-panel {
+  background: #090b12;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  position: relative;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 0.2s ease;
+}
+
+.jev-panel:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Subtle glowing backdrop mesh */
+.ambient-glow-emerald {
+  background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+}
+.ambient-glow-cyan {
+  background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+}
+.ambient-glow-amber {
+  background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 70%);
 }
 
 /* Bot Alive Idle Animations */
@@ -117,21 +137,6 @@
   }
 }
 
-@keyframes scanLaserH {
-  0% {
-    left: 0%;
-    opacity: 0.8;
-  }
-  50% {
-    left: 95%;
-    opacity: 0.4;
-  }
-  100% {
-    left: 0%;
-    opacity: 0.8;
-  }
-}
-
 @keyframes radarRotate {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -140,31 +145,6 @@
 @keyframes pipelinePulse {
   0% { stroke-dashoffset: 40; }
   100% { stroke-dashoffset: 0; }
-}
-
-@keyframes crateDrop {
-  0% {
-    transform: translateY(-5px) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(28px) scale(0.6) rotate(20deg);
-    opacity: 0;
-  }
-}
-
-@keyframes goldPingFloat {
-  0% {
-    transform: translateY(0px) scale(0.9);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-24px) scale(1.1);
-    opacity: 0;
-  }
 }
 
 .bot-bob {

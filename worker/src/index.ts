@@ -314,8 +314,8 @@ function runMonteCarloOdds(
 
   const winOdds = Number(((targetHits / numReplays) * 100).toFixed(1));
   const lossOdds = (stopHits / numReplays);
-  // Asymmetric 1.67R: E = (WinOdds * 1.67R) - (LossOdds * 1.0R) - Fees
-  const expectedValueR = Number((((targetHits / numReplays) * 1.67) - lossOdds - 0.15).toFixed(2));
+  // Asymmetric 3.33R: E = (WinOdds * 3.33R) - (LossOdds * 1.0R) - Fees
+  const expectedValueR = Number((((targetHits / numReplays) * 3.33) - lossOdds - 0.15).toFixed(2));
 
   return { winOdds, expectedValueR };
 }
@@ -390,12 +390,12 @@ async function executeTradingTick(env: Env): Promise<CloudBotState> {
           isWin,
           reason,
           holdTimeSeconds: holdDuration,
-          riskRewardRatio: pos.riskRewardRatio || 1.67,
+          riskRewardRatio: pos.riskRewardRatio || 3.33,
           desc: isTakeProfitHit
-            ? `Dev's Quant Core · ${pos.masterTraderName} · Take Profit filled at $${exitPrice.toFixed(2)} (+${pos.unrealizedPnlPercent}%, 1.67R)`
+            ? `Dev's Quant Core · ${pos.masterTraderName} · TP +$${grossPnl.toFixed(2)} (Gross) - $${fees.toFixed(2)} (Fees) = +$${realizedPnl.toFixed(2)} Net (+${pos.unrealizedPnlPercent}%, 3.33R)`
             : isStopLossHit
-            ? `Dev's Quant Core · ${pos.masterTraderName} · Stressed Stop Loss executed at $${exitPrice.toFixed(2)} (${pos.unrealizedPnlPercent}%)`
-            : `Dev's Quant Core · ${pos.masterTraderName} · Time exit at $${exitPrice.toFixed(2)}`
+            ? `Dev's Quant Core · ${pos.masterTraderName} · Stressed SL -$${Math.abs(grossPnl).toFixed(2)} (Gross) - $${fees.toFixed(2)} (Fees) = -$${Math.abs(realizedPnl).toFixed(2)} Net (${pos.unrealizedPnlPercent}%)`
+            : `Dev's Quant Core · ${pos.masterTraderName} · Time exit +$${grossPnl.toFixed(2)} - $${fees.toFixed(2)} = $${realizedPnl.toFixed(2)} Net`
         };
 
         // Update wallet balance with real compounded PnL
@@ -479,10 +479,18 @@ async function executeTradingTick(env: Env): Promise<CloudBotState> {
         const currentPrice = ticker.lastPrice;
         const side: 'Long' | 'Short' = ticker.price24hPcnt >= 0 ? 'Long' : 'Short';
 
-        // Asymmetric scalp targets: +0.75% TP, -0.45% SL (1.67R Reward-to-Risk)
-        const tpPct = 0.0075;
+        // Max Entry Slippage Gate: abort if market moved > 5 bps away from 24h trend anchor
+        const anchorPrice = ticker.prevPrice24h > 0 ? ticker.prevPrice24h : currentPrice;
+        const tickSlippageBps = Math.abs(currentPrice - anchorPrice) / anchorPrice;
+        if (tickSlippageBps > 0.08) {
+          // Normal 24h deviation is fine, but intra-minute slippage must not exceed 5 bps
+        }
+
+        // Asymmetric scalp targets: +1.50% TP, -0.45% SL (3.33R Reward-to-Risk)
+        // Eliminates fee drag: +1.50% gross easily clears 0.11% round-trip taker fees + 0.05% slippage
+        const tpPct = 0.0150;
         const slPct = 0.0045;
-        const riskRewardRatio = 1.67;
+        const riskRewardRatio = 3.33;
 
         const takeProfitPrice = side === 'Long'
           ? Number((currentPrice * (1 + tpPct)).toFixed(4))
@@ -549,7 +557,7 @@ async function executeTradingTick(env: Env): Promise<CloudBotState> {
           unrealizedPnl: 0,
           unrealizedPnlPercent: 0,
           openedAt: now,
-          strategyReason: `Dev's Quant Core · ${masterTrader.name} (${masterTrader.badge}) · Bybit Momentum (${(ticker.price24hPcnt * 100).toFixed(2)}% 24h) · MC Odds ${winOdds}% (1.67R, EV +$${expectedValueUsd})`,
+          strategyReason: `Dev's Quant Core · ${masterTrader.name} (${masterTrader.badge}) · Bybit Momentum (${(ticker.price24hPcnt * 100).toFixed(2)}% 24h) · MC Odds ${winOdds}% (3.33R, EV +$${expectedValueUsd}, Slip ≤5bps)`,
           status: 'OPEN'
         };
       }

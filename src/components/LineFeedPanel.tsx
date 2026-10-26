@@ -87,7 +87,10 @@ export const LineFeedPanel: React.FC<Props> = ({ feeds }) => {
                   <td className="py-2 px-2 font-bold text-yellow-400/90 whitespace-nowrap">
                     {fill.token}
                   </td>
-                  <td className="py-2 px-2 text-slate-300 truncate max-w-xs sm:max-w-md">
+                  <td
+                    className="py-2 px-2 text-slate-300 truncate max-w-xs sm:max-w-md cursor-help"
+                    title={fill.desc}
+                  >
                     {fill.desc}
                   </td>
                   <td

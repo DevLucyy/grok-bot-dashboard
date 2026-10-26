@@ -42,6 +42,8 @@ export interface PaperTradeFill {
   entryPrice: number;
   exitPrice: number;
   sizeUsd: number;
+  grossPnl?: number;
+  fees?: number;
   pnl: number;
   pnlPercent: number;
   isWin: boolean;
@@ -152,8 +154,8 @@ export class PaperTradingStrategyEngine {
 
     const winOdds = Number(((targetHits / numReplays) * 100).toFixed(1));
     const lossOdds = (stopHits / numReplays);
-    // Asymmetric 1.67R: E = (WinOdds * 1.67R) - (LossOdds * 1.0R) - Fees
-    const expectedValueR = Number((((targetHits / numReplays) * 1.67) - lossOdds - 0.15).toFixed(2));
+    // Asymmetric 3.33R: E = (WinOdds * 3.33R) - (LossOdds * 1.0R) - Fees
+    const expectedValueR = Number((((targetHits / numReplays) * 3.33) - lossOdds - 0.15).toFixed(2));
 
     return { winOdds, expectedValueR };
   }
@@ -256,6 +258,8 @@ export class PaperTradingStrategyEngine {
           entryPrice: pos.entryPrice,
           exitPrice,
           sizeUsd: pos.sizeUsd,
+          grossPnl: Number(grossPnl.toFixed(2)),
+          fees: Number(fees.toFixed(2)),
           pnl: realizedPnl,
           pnlPercent: pos.unrealizedPnlPercent,
           isWin,
@@ -263,10 +267,10 @@ export class PaperTradingStrategyEngine {
           holdTimeSeconds: holdDuration,
           riskRewardRatio: pos.riskRewardRatio,
           desc: isTakeProfitHit
-            ? `Copied ${pos.masterTraderName} · Take Profit booked at $${exitPrice.toFixed(2)} (+${pos.unrealizedPnlPercent}%, 1.67R)`
+            ? `Copied ${pos.masterTraderName} · TP +$${grossPnl.toFixed(2)} (Gross) - $${fees.toFixed(2)} (Fees) = +$${realizedPnl.toFixed(2)} Net (+${pos.unrealizedPnlPercent}%, 3.33R)`
             : isStopLossHit
-            ? `Copied ${pos.masterTraderName} · Stressed Stop Loss executed at $${exitPrice.toFixed(2)} (${pos.unrealizedPnlPercent}%)`
-            : `Copied ${pos.masterTraderName} · Time exit at $${exitPrice.toFixed(2)}`
+            ? `Copied ${pos.masterTraderName} · Stressed SL -$${Math.abs(grossPnl).toFixed(2)} (Gross) - $${fees.toFixed(2)} (Fees) = -$${Math.abs(realizedPnl).toFixed(2)} Net (${pos.unrealizedPnlPercent}%)`
+            : `Copied ${pos.masterTraderName} · Time exit +$${grossPnl.toFixed(2)} - $${fees.toFixed(2)} = $${realizedPnl.toFixed(2)} Net`
         };
 
         this.lastTradeClosedAt = now;
@@ -342,12 +346,25 @@ export class PaperTradingStrategyEngine {
       }
 
       if (shouldLong || shouldShort) {
+        // Max Entry Slippage Gate: abort if market moved > 5 bps away from signal pivot
+        const entrySlippageBps = Math.abs(currentPrice - checkClose) / checkClose;
+        if (entrySlippageBps > 0.0005) {
+          continue; // Circuit Breaker: Slippage > 5 bps, avoid chasing wick
+        }
+
+        // Pullback Confirmation Gate: do not enter at the tip of an extended wick
+        if (completedBar) {
+          if (shouldLong && currentPrice > completedBar.high * 1.0004) continue;
+          if (shouldShort && currentPrice < completedBar.low * 0.9996) continue;
+        }
+
         const side: 'Long' | 'Short' = shouldLong ? 'Long' : 'Short';
 
-        // 3. Asymmetric Scalp Targets: +0.75% TP, -0.45% SL (1.67R Reward-to-Risk)
-        const tpPct = 0.0075;
+        // 3. Asymmetric Scalp Targets: +1.50% TP, -0.45% SL (3.33R Reward-to-Risk)
+        // Eliminates fee drag: +1.50% gross easily clears 0.11% round-trip taker fees + 0.05% slippage
+        const tpPct = 0.0150;
         const slPct = 0.0045;
-        const riskRewardRatio = 1.67;
+        const riskRewardRatio = 3.33;
 
         const takeProfitPrice = side === 'Long'
           ? Number((currentPrice * (1 + tpPct)).toFixed(4))
@@ -415,7 +432,7 @@ export class PaperTradingStrategyEngine {
           unrealizedPnl: 0,
           unrealizedPnlPercent: 0,
           openedAt: now,
-          strategyReason: `Dev's Quant Core · ${masterTrader.name} (${masterTrader.badge}) · ${signalReason} · MC Win Odds ${winOdds}% (1.67R, EV +$${expectedValueUsd})`,
+          strategyReason: `Dev's Quant Core · ${masterTrader.name} (${masterTrader.badge}) · ${signalReason} · MC Win Odds ${winOdds}% (3.33R, EV +$${expectedValueUsd}, Slip ≤5bps)`,
           status: 'OPEN'
         };
 

@@ -53,7 +53,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket, onInspectBot }) => {
             ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
             : 'bg-slate-900 border-slate-700 text-slate-400'
         }`}>
-          {ticket.isOpen ? `${ticket.side?.toUpperCase() || 'LONG'} · 1.67R BRACKET` : 'SCANNING BYBIT...'}
+          {ticket.isOpen ? `${ticket.side?.toUpperCase() || 'LONG'} · 3.33R BRACKET` : 'SCANNING BYBIT...'}
         </span>
       </div>
 
@@ -124,7 +124,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket, onInspectBot }) => {
           </div>
           <div className="px-2 py-1 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex items-center justify-between">
             <span className="text-slate-400">R:R TARGET:</span>
-            <span className="font-bold text-emerald-300">1.67R ASYMMETRIC</span>
+            <span className="font-bold text-emerald-300">3.33R ASYMMETRIC</span>
           </div>
         </div>
       </div>
@@ -137,7 +137,7 @@ export const OnTheTicketPanel: React.FC<Props> = ({ ticket, onInspectBot }) => {
         </div>
 
         <div className="p-2 rounded bg-black/60 border border-yellow-500/10 flex flex-col">
-          <span className="text-[10px] text-slate-500 uppercase tracking-wider">TARGET (+0.75%, 1.67R)</span>
+          <span className="text-[10px] text-slate-500 uppercase tracking-wider">TARGET (+1.50%, 3.33R)</span>
           <span className="text-sm font-bold text-emerald-400 truncate">{ticket.exit}</span>
         </div>
 
